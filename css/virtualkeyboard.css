@@ -1,0 +1,53 @@
+ul {
+	padding: 0;
+}
+
+li {
+	list-style: none;
+	overflow: hidden;
+}
+
+li div {
+	padding: 10px 0px;
+	border: 3px solid;
+	margin: 2px;
+	width: 203px;
+	text-align: center;
+}
+
+.characterskeyboard li div {
+	padding: 10px 0px;
+	border: 3px solid;
+	margin: 2px;
+	width: 61px;
+	text-align: center;
+}
+
+.monthkeyboard li .month div {
+	padding: 0;
+	border: 0;
+	border: none;
+	width: 100%;
+}
+
+.onblur {
+	padding: 10px;
+	margin: 10px;
+	background-color: transparent;
+	font-size: 1.3em;
+	outline: none;
+	border: 0;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	list-style: none;
+}
+
+.onfocus {
+	font-size: 1.5em;
+	outline: none;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	list-style: none;
+	background-color: #FFFFFF;
+	border: 1px;
+}

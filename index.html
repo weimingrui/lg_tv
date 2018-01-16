@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>LGPortal</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<script type="text/javascript">
+			document.onkeydown = function(a) {
+				var b = a.which || a.keyCode || a.charCode;
+				if (8 == b) {
+					if (a = a || window.event, !a || !a.preventDefault) return a.returnvalue = !1, !1;
+					a.preventDefault(), a.stopPropagation();
+				}
+			};
+		</script>
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			img {
+				position: absolute
+			}
+			.menuFocus,
+			.focus {
+				display: none
+			}
+			
+			.nav {
+				width: 1280px;
+				height: 134px;
+			}
+			
+			.menuTitle {
+				position: relative;
+				float: left;
+				width: 160px;
+				text-align: center;
+				font-size: 32px;
+			}
+			
+			.menuTitle small {
+				font-size: 12px;
+			}
+			
+			.menuTitleFocus {
+				color: #F0FD00;
+			}
+			
+			.menuFocus {
+				top: 125px;
+				left: 162px;
+			}
+			
+			.nowDate {
+				margin-top: 20px;
+				padding-right: 10px;
+				font-size: 20px;
+				text-align: right;
+				border-right: 1px solid #FFF
+			}
+			
+			.nowTime {
+				margin: 10px 20px 0px 10px;
+				font-size: 50px
+			}
+			
+			.user {
+				position: absolute;
+				top: 670px;
+				left: 995px;
+			}
+			
+			#subMenuBox {
+				display: none
+			}
+			
+			.appDownloadBox {
+				display: none;
+				position: absolute;
+				top: 150px;
+				left: 430px;
+				width: 420px;
+				height: 420px;
+				border-radius: 6px;
+				box-shadow: 0 0 8px 3px rgba(0, 0, 0, .6);
+				background: rgba(0, 0, 0, .8);
+				z-index: 1000
+			}
+			.confrimBox{
+				display: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2
+			}
+			.confrim {
+				background: url(img/confrim_login_bg.png);
+			}
+			.login-btn {
+				background: url(img/login_btn.png);
+			}
+			.regist-btn {
+				background: url(img/regist_btn.png);
+			}
+			img:hover {
+				border-color: red;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="maskLaye"></div>
+		<div class="loading">
+			<img width="50" height="50" src="img/loading.gif">
+			<div class="loadingText"></div>
+		</div>
+		<div class="nav">
+			<img style="top:54px;left:50px;" src="img/logo.png">
+			<div style="position:absolute;top:39px;left:150px;">
+				<div class="menuTitle" onclick="clickMenu(0);" onmousemove="mouseOverMenu(0);"><small>LIVE & REC</small>
+					<br />直播录像</div>
+				<div class="menuTitle" onclick="clickMenu(1);" onmousemove="mouseOverMenu(1);"><small>VOD</small>
+					<br />精彩点播</div>
+				<div class="menuTitle" onclick="clickMenu(2);" onmousemove="mouseOverMenu(2);"><small>FUNCTION</small>
+					<br />个人管理</div>
+			</div>
+			<img class="menuFocus" src="img/menu_focus.png" />
+			<div style="float:right;width:315px;">
+				<div class="nowDate"></div>
+				<div class="nowTime"></div>
+			</div>
+		</div>
+		<div class="focus" onclick="clickSubMenu();"></div>
+		<div id="subMenuBox" style="position:absolute;top:164px;left:0px;">
+			<div id="live_page" style="position:absolute;top:0;left:50px;">
+				<img style="top:0px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(0,0)"   onmouseover="mouseOverSubMenu(0,0)" src="">
+				<img style="top:0px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(0,1)" onmouseover="mouseOverSubMenu(0,1)"  src="">
+				<img style="top:0px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(0,2)" onmouseover="mouseOverSubMenu(0,2)"  src="">
+				<img style="top:0px;left:714px;width:228px;height:228px;" onclick="clickSubMenu(0,3)" onmouseover="mouseOverSubMenu(0,3)"  src="">
+				<img style="top:0px;left:952px;width:228px;height:228px;" onclick="clickSubMenu(0,4)" onmouseover="mouseOverSubMenu(0,4)"  src="">
+				<img style="top:238px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(0,5)" onmouseover="mouseOverSubMenu(0,5)"   src="">
+				<img style="top:238px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(0,6)" onmouseover="mouseOverSubMenu(0,6)" src="">
+				<img style="top:238px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(0,7)" onmouseover="mouseOverSubMenu(0,7)" src="">
+				<img style="top:238px;left:714px;width:228px;height:228px;" onclick="clickSubMenu(0,8)" onmouseover="mouseOverSubMenu(0,8)" src="">
+				<img style="top:238px;left:952px;width:228px;height:228px;" onclick="clickSubMenu(0,9)" onmouseover="mouseOverSubMenu(0,9)" src="">
+			</div>
+			<div  id="video_page" style="position:absolute;top:0;left:1330px;">
+				<img style="top:0px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(1,0)" onmouseover="mouseOverSubMenu(1,0)" src="">
+				<img style="top:0px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(1,1)" onmouseover="mouseOverSubMenu(1,1)" src="">
+				<img style="top:0px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(1,2)" onmouseover="mouseOverSubMenu(1,2)" src="">
+				<img style="top:0px;left:714px;width:228px;height:228px;" onclick="clickSubMenu(1,3)" onmouseover="mouseOverSubMenu(1,3)" src="">
+				<img style="top:0px;left:952px;width:228px;height:228px;" onclick="clickSubMenu(1,4)" onmouseover="mouseOverSubMenu(1,4)" src="">
+				<img style="top:238px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(1,5)" onmouseover="mouseOverSubMenu(1,5)" src="">
+				<img style="top:238px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(1,6)" onmouseover="mouseOverSubMenu(1,6)" src="">
+				<img style="top:238px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(1,7)" onmouseover="mouseOverSubMenu(1,7)" src="">
+				<img style="top:238px;left:714px;width:228px;height:228px;" onclick="clickSubMenu(1,8)" onmouseover="mouseOverSubMenu(1,8)" src="">
+				<img style="top:238px;left:952px;width:228px;height:228px;" onclick="clickSubMenu(1,9)" onmouseover="mouseOverSubMenu(1,9)" src="">
+			</div>
+			<div  style="position:absolute;top:0;left:2729px;">
+				<img style="top:0px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(2,0)" onmouseover="mouseOverSubMenu(2,0)" src="img/person_1.png">
+				<img style="top:0px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(2,1)" onmouseover="mouseOverSubMenu(2,1)" src="img/person_2.png">
+				<img style="top:0px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(2,2)" onmouseover="mouseOverSubMenu(2,2)" src="img/person_3.png">
+				<img style="top:238px;left:0px;width:228px;height:228px;" onclick="clickSubMenu(2,3)" onmouseover="mouseOverSubMenu(2,3)" src="img/person_5.png">
+				<img style="top:238px;left:238px;width:228px;height:228px;" onclick="clickSubMenu(2,4)" onmouseover="mouseOverSubMenu(2,4)" src="img/person_6.png">
+				<img style="top:238px;left:476px;width:228px;height:228px;" onclick="clickSubMenu(2,5)" onmouseover="mouseOverSubMenu(2,5)" src="img/person_7.png">
+			</div>
+		</div>
+		<div class="user" style="left:50px;top:680px"></div>
+        <div id="experience_duration"  style="top:680px;position:absolute;left:950px;"></div>
+		<!--<div class="change">切换用户</div>-->
+		<div class="appDownloadBox">
+			<img style="top:10px;left:10px;width:400px;height:400px;" src="img/app.png">
+		</div>
+		<div class="confrimBox">
+			<div class="confrim" style="z-index:3">
+				<div class="confrimText"><span style="font-size: 28px;">你还没有登录，是否现在登录</span></div>
+				<div class="login-btn" onclick="clickLogin(0)" onmouseover="mouseOverLogin(0)" onmouseout="mouseOverLogin(1)"></div>
+				<div class="regist-btn" onclick="clickLogin(1)" onmouseover="mouseOverLogin(1)" onmouseout="mouseOverLogin(0)"></div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+
+	<script type="text/javascript" src="js/comm.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.js"></script>
+	<script type="text/javascript">
+		var menuList = [
+			[{
+				top: 0,
+				left: 0,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "livePlay.html"
+			}, {
+				top: 0,
+				left: 238,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_LBGJ"
+			}, {
+				top: 0,
+				left: 476,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_WXHNC"
+			}, {
+				top: 0,
+				left: 714,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_BPBXD4"
+			}, {
+				top: 0,
+				left: 952,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_XAB"
+			}, {
+				top: 238,
+				left: 0,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_SSDGS"
+			}, {
+				top: 238,
+				left: 238,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y_SUNNOVO_FREE_0_HYJJDEJ"
+			}, {
+				top: 238,
+				left: 476,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y4A36C341A56F4393A493621E39F912C9"
+			}, {
+				top: 238,
+				left: 714,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=100&mid=Y96A68094A39D41FABFAB48588D1535BA"
+			}, {
+				top: 238,
+				left: 952,
+				width: 228,
+				height: 228,
+                picUrl:"img/more_live.png",
+				url: "vod.html?100"
+			}],
+			[{
+				top: 0,
+				left: 0,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_QADFYG"
+			}, {
+				top: 0,
+				left: 238,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_NNQCWMZH"
+			}, {
+				top: 0,
+				left: 476,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_QQNWX"
+			}, {
+				top: 0,
+				left: 714,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_PDHYS"
+			}, {
+				top: 0,
+				left: 952,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_HXHXASN"
+			}, {
+				top: 238,
+				left: 0,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_YHT"
+			}, {
+				top: 238,
+				left: 238,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_HLS"
+			}, {
+				top: 238,
+				left: 476,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_ADZZ"
+			}, {
+				top: 238,
+				left: 714,
+				width: 228,
+				height: 228,
+                picUrl:"",
+				url: "detail.html?cid=101&mid=W_SUNNOVO_FREE_0_SM"
+			}, {
+				top: 238,
+				left: 952,
+				width: 228,
+				height: 228,
+                picUrl:"img/more_vod.png",
+				url: "vod.html?101"
+			}],
+			[{
+				top: 0,
+				left: 0,
+				width: 228,
+				height: 228,
+				url: "user.html"
+			}, {
+				top: 0,
+				left: 238,
+				width: 228,
+				height: 228,
+				url: "playrecord.html"
+			}, {
+				top: 0,
+				left: 476,
+				width: 228,
+				height: 228,
+				url: "favorite.html"
+			}, {
+				top: 238,
+				left: 0,
+				width: 228,
+				height: 228,
+				url: showSubscribeBox
+			}, {
+				top: 238,
+				left: 238,
+				width: 228,
+				height: 228,
+				url: "message.html"
+			}, {
+				top: 238,
+				left: 476,
+				width: 228,
+				height: 228,
+				url: clearStorage
+			}]
+		];
+		var onMenu = true,
+			oldMenuPos = 0,
+			menuPos = 0,
+			focusPos = -1,
+			subMenuPos = 0;
+		function setPlayrecordFocus(focusPos) {
+			if (focusPos == 0) {
+				$(".regist-btn").css("visibility", "hidden");
+				$(".login-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".login-btn").css("visibility", "hidden");
+				$(".regist-btn").css("visibility", "visible");
+			}
+		}
+		
+		function checkUserInfo(UserInfo){
+			if( UserInfo.user == ""){
+				focusPos = 0 ;
+				setPlayrecordFocus(focusPos);
+				$(".confrimBox").show();
+			}else{
+                if(!UserInfo.hasGotLocation){
+                    if(typeof jContentShellJBridge!='undefined'&&typeof  jContentShellJBridge.disableMouseMode!='undefined')
+                        jContentShellJBridge.disableMouseMode(true);
+                    if(document.grantAccessRight != undefined)
+                        document.grantAccessRight();
+                    if(typeof qcastTop != "undefined"&& typeof qcastTop.iframe_page_cast_ != "undefined"&& typeof qcastTop.iframe_page_cast_.fakeReferrerUrl != "undefined"){
+                        qcastTop.iframe_page_cast_.fakeReferrerUrl = 'SET_TO_EMPTY';
+                    }
+                    var requestAjax= new Ajax();
+                    requestAjax.getHtmlContent('http://lg.live.qcast.cn/manage/getAddress.php?','','POST','ip=myip',getUserIPInfoModel_qqzeng);
+                }
+                OISUtil.login();
+			}
+		}
+        function reDrawHomepage(){
+            for(var j=0;j<20;j++){
+                if(j<HomepageInfo.length){
+                    menuList[parseInt(j/9)][j%9].url=HomepageInfo[j].mediaUrl;
+                    menuList[parseInt(j/9)][j%9].picUrl=HomepageInfo[j].picUrl;
+                }
+                if(j<10){
+                    $("#live_page")[0].getElementsByTagName('img')[j].src=menuList[parseInt(0)][j].picUrl;
+                }else{
+                    $("#video_page")[0].getElementsByTagName('img')[j-10].src=menuList[1][j-10].picUrl;
+                }
+            }
+        }
+        function updateLocalHomepageData(result){
+            if(!result){
+                return;
+            }
+            if(!result.data){
+                return ;
+            }
+            var data=JSON.parse(result.data);
+            if(data.status=="success"){
+                data=data.data;
+            }else{
+                return;
+            }
+            var DataList=decodeURIComponent(data);
+            try{
+                DataList=JSON.parse(DataList);
+            }catch(e){
+                return;
+            }
+            var needRedrawHomepage=false;
+            var needSaveHompageInfo=false;
+            for(var j=0;j<18;j++){
+                if(DataList[j].picUrl!=HomepageInfo[j].picUrl){
+                    HomepageInfo[j].picUrl= DataList[j].picUrl;
+                    //reDraw sign
+                    needRedrawHomepage=true;
+                }
+                if(HomepageInfo[j].mediaUrl!=DataList[j].mediaUrl){
+                    needSaveHompageInfo=true;
+                }
+                HomepageInfo[j].mediaUrl=DataList[j].mediaUrl;
+            }
+            if(needSaveHompageInfo||needRedrawHomepage){
+                localStorage.removeItem('HomepageInfo');
+                ToolsUtil.saveCache("HomepageInfo", JSON.stringify(HomepageInfo));
+            }
+            if(needRedrawHomepage){
+                console.log('need update homepage');
+                reDrawHomepage();
+            }
+        }
+		function haverMenu(status){
+			alert(status);
+		}
+		function onOISLoad() {
+			/*获取当前用户信息,缓存中有使用缓存中的，没有则保存默认值到缓存中*/
+			if (Boolean(localStorage.getItem("UserInfo"))) {
+				UserInfo = JSON.parse(localStorage.getItem("UserInfo"));
+				checkUserInfo(UserInfo);
+			}
+		}
+        function checkUser(str) {
+            /*var re = /^[\w-]{8,16}$/;
+            if (!re.test(str)) {
+                errorFocus($("#username"))
+                DialogUtil.showAlert("用户注册错误", "用户名必须是由字母、数字、下划线和小短杠组成且须8-16位");
+                userFlag = false;
+            } else {*/
+            UserInfo.user = str;
+            OISUtil.checkUser();
+            //}
+        }
+		function eventHandle(keyObj) {
+			if ($(".appDownloadBox").css("display") != "none") {
+				$(".appDownloadBox").hide();
+				return scrollFun(keyObj.event);
+			}
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if(focusPos == 1){
+						focusPos = 0;
+						setPlayrecordFocus(focusPos);
+						break;
+					}
+					if (onMenu && focusPos == -1) {
+						if (menuPos > 0) {
+							menuPos--, subMenuPos = 0;
+							setMenuFocus(3);
+						}
+						break;
+					}
+					if (menuPos == 0 && focusPos == -1) {
+						if (subMenuPos == 0 || subMenuPos == 5) break;
+						else subMenuPos--;
+					} else if (menuPos == 1 && focusPos == -1) {
+						if (subMenuPos == 0 || subMenuPos == 5) {
+							menuPos--, subMenuPos = 4;
+							setMenuFocus(2);
+							break;
+						} else subMenuPos--;
+					} else if (menuPos == 2 && focusPos == -1) {
+						if (subMenuPos == 0 || subMenuPos == 3) {
+							menuPos--, subMenuPos = 4;
+							setMenuFocus(2);
+							break;
+						} else subMenuPos--;
+					}
+					setSubMenuFocus();
+					break;
+				case "DPAD_UP":
+					if (onMenu && focusPos == -1) break;
+					if ((menuPos == 0 || menuPos == 1) && focusPos== -1) {
+						if (subMenuPos < 5) {
+							onMenuFocus();
+							break;
+						} else subMenuPos -= 5;
+					} else if (menuPos == 2 && focusPos== -1) {
+						if (subMenuPos < 3) {
+							onMenuFocus();
+							break;
+						} else subMenuPos -= 3;
+					}
+					setSubMenuFocus();
+					break;
+				case "DPAD_RIGHT":
+					if(focusPos == 0){
+						focusPos = 1;
+						setPlayrecordFocus(focusPos);
+						break;
+					}
+					if (onMenu && focusPos == -1) {
+						if (menuPos < 2) {
+							menuPos++, subMenuPos = 0;
+							setMenuFocus(3);
+						}
+						break;
+					}
+					if ((menuPos == 0 || menuPos == 1) && focusPos== -1) {
+						if (subMenuPos == 4 || subMenuPos == 9) {
+							menuPos++, subMenuPos = 0;
+							setMenuFocus(2);
+							break;
+						} else subMenuPos++;
+					} else if (menuPos == 2 && focusPos== -1) {
+						if (subMenuPos == 2) break;
+						else if (subMenuPos ==5) subMenuPos = 3;
+						else subMenuPos++;
+					}
+					setSubMenuFocus();
+					break;
+				case "DPAD_DOWN":
+					if (onMenu && focusPos== -1) {
+						onMenuBlur();
+						break;
+					}
+					if ((menuPos == 0 || menuPos == 1) && focusPos== -1) {
+						if (subMenuPos > 4) break;
+						else subMenuPos += 5;
+					} else if (menuPos == 2 && focusPos== -1) {
+						if (subMenuPos > 2) break;
+						else subMenuPos += 3;
+					}
+					setSubMenuFocus();
+					break;
+				case "DPAD_OK":
+					if(focusPos == -1){
+						sessionStorage.setItem("homeInitObj", JSON.stringify({
+							onMenu: onMenu,
+							menuPos: menuPos,
+							subMenuPos: subMenuPos
+							}));
+						if (!onMenu) {
+							var url = menuList[menuPos][subMenuPos].url;
+							if (typeof url == "string") {
+								videoObj = null;
+								window.location.href = url;
+							} else if (typeof url == "function") url();
+							} else if (menuPos != 2) {
+							window.location.href = "vod.html?10" + menuPos;
+						}
+					}else if(focusPos == 0){
+						window.location.href = "login.html";
+					}else if(focusPos == 1){
+                        window.location.href = "register.html";
+					}
+					break;
+                case "NAV_BACK":
+                    //DialogUtil.showAlert('f',"back");
+                    window.history.go(0);
+                    break;
+			}
+			return scrollFun(keyObj.event);
+		}
+        var end_time=null;
+        function onMessage(e) {
+            OISUtil.onMessage(e);
+            EPGSUtil.onMessage(e);
+            var data = e.data;
+            var result = data.result;
+
+            switch (data.event) {
+                case "all_subscribeList":
+                    var result = data.result;
+                    if (result.status == 200) {
+                        if (Boolean(result.data)) {
+                            var time=CurrentServerTime;
+                            var end_utc="未订购";
+                            /*if(time){
+                                var root = XMLUtil.loadXML(result.data);
+                                var recordNodes = root.getElementsByTagName("subscribelist");
+                                for (var i = 0; i < recordNodes.length; i++) {
+                                    var serviceId = XMLUtil.getAttributeValue(recordNodes[i], "sid");
+                                    if (serviceId == "PALL_1M_Free_QCast") {
+                                        var start_utc = XMLUtil.getAttributeValue(recordNodes[i], "start_utc");
+                                        var end_utc = XMLUtil.getAttributeValue(recordNodes[i], "end_utc");
+                                        OISUtil.deleteSubscribe(serviceId,start_utc,end_utc,"delete_subscribe");
+                                        break;
+                                    }
+                                }
+                            }else{*/
+                            var root = XMLUtil.loadXML(result.data);
+                            var recordNodes = root.getElementsByTagName("subscribelist");
+                            var _needGetFreeSign=true;
+                            /*for (var i = 0; i < recordNodes.length; i++) {
+                                var serviceId = XMLUtil.getAttributeValue(recordNodes[i], "sid");
+                                if (serviceId == "PALL_1M_Free_QCast"&&recordNodes.length>1) {
+                                    continue;
+                                }
+                                var start_utc = XMLUtil.getAttributeValue(recordNodes[i], "start_utc");
+                                end_utc = XMLUtil.getAttributeValue(recordNodes[i], "end_utc");
+                                _needGetFreeSign = false;
+                                if(typeof end_utc=="string"){
+                                    end_utc = parseInt(end_utc*1000);
+                                }
+                                end_time = new Date(end_utc);
+                                end_utc = end_time.getFullYear()+"年"+(end_time.getMonth()+1)+"月"+end_time.getDate()+"日";
+                                end_utc = "订购有效期："+end_utc;
+                            }*/
+                            if(recordNodes.length>0){
+                                end_utc = XMLUtil.getAttributeValue(recordNodes[recordNodes.length-1], "end_utc");
+                                _needGetFreeSign = false;
+                                if(typeof end_utc=="string"){
+                                    end_utc = parseInt(end_utc*1000);
+                                }
+                                if(end_utc>time*1000){
+                                    end_time = new Date(end_utc);
+                                    end_utc = end_time.getFullYear()+"年"+(end_time.getMonth()+1)+"月"+(end_time.getDate()-1)+"日";
+                                    end_utc = "订购有效期："+end_utc;
+                                }
+                            }
+                            var october_1st = (new Date("2016/10/01 00:00:00")).getTime()/1000;
+                            if(_needGetFreeSign&&time<october_1st){
+                                OISUtil.freeSubscribe("PALL_3M_Free_QCast",time,0,"free_subscribe");
+                            }
+                            $("#experience_duration")[0].innerHTML=end_utc;
+                        }
+                    }
+                    break;
+                case "delete_subscribe":
+                        console.log("delete free experience");
+                    break;
+                case "free_subscribe":
+                    result = data.result;
+                    if (result.status == 200) {
+                        paymentLink = result.location;
+                        DialogUtil.showAlert("温馨提示","恭喜您已获得免费使用权！");
+                        window.setTimeout(function(){
+                            if($(".alert").length > 0&&$('.alertContent')[0].innerHTML=="恭喜您已获得免费使用权！"){
+                                DialogUtil.hideAler();
+                            }
+                        },3000);
+                        $("#experience_duration")[0].innerHTML="订购有效期：2016年10月1日";
+                        //qrcodeBoxObj.show();
+                    } else if (result.status == 400) {
+                        DialogUtil.showAlert("订购错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+                    } else if (result.status == 401) {
+                        DialogUtil.showAlert("订购错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+                    } else if (result.status == 402) {
+                        DialogUtil.showAlert("订购错误", "无效serviceId，请联系客服<br/>邮箱：channelchina@qcast.cn");
+                    } else if (result.status == 403) {
+                        DialogUtil.showAlert("订购错误", "无效token，请联系客服<br/>邮箱：channelchina@qcast.cn");
+                    } else if (result.status == 409) {
+                        DialogUtil.showAlert("温馨提示", "您已订购该产品包且在有效期内");
+                    } else if (result.status == 500) {
+                        DialogUtil.showAlert("订购错误", "服务器内部错误，请联系客服<br/>邮箱：channelchina@qcast.cn");
+                    }
+                    break;
+            }
+        }
+		$(function() {
+            if(typeof jContentShellJBridge!='undefined'&&typeof  jContentShellJBridge.disableMouseMode!='undefined')
+                jContentShellJBridge.disableMouseMode(true);
+            menuList[0][0].url = "livePlay.html?" + localStorage.getItem("lastPlayId");
+            reDrawHomepage();
+            var requestAjax= new Ajax();
+            requestAjax.getHtmlContent('http://lg.live.qcast.cn/manage/get.php','','GET','',updateLocalHomepageData);
+
+			if (Boolean(sessionStorage.getItem("homeInitObj"))) {
+				var homeInitObj = JSON.parse(sessionStorage.getItem("homeInitObj"));
+				onMenu = homeInitObj.onMenu, oldMenuPos = menuPos = homeInitObj.menuPos, subMenuPos = homeInitObj.subMenuPos;
+				sessionStorage.removeItem("homeInitObj");
+				$("#subMenuBox").css({
+					left: -1280 * menuPos
+				});
+				$(".menuTitle").eq(menuPos).addClass("menuTitleFocus");
+				$(".menuFocus").css("left", 162 + 160 * menuPos);
+				if (onMenu) {
+					$(".menuFocus").show(), subMenuPos = 0;
+				} else {
+					setSubMenuFocus(), $(".focus").show();
+				}
+			} else {
+				$(".menuTitle").eq(menuPos).addClass("menuTitleFocus");
+				$(".menuFocus").css("left", 162 + 160 * menuPos).show();
+			}
+			$("#subMenuBox").show();
+            if(UserInfo.needRequestProductList){
+                UserInfo.needRequestProductList=false;
+                ToolsUtil.saveCache("UserInfo", JSON.stringify(UserInfo));
+                DialogUtil.hideAler();
+            }
+			onOISLoad();
+			initDate();
+            /*webOS.service.request("luna://com.webos.service.connectionmanager", {
+                method: "getStatus",
+                onSuccess: function (inResponse) {
+                    DialogUtil.showAlert("Result: " + JSON.stringify(inResponse));
+                    // To-Do something
+                },
+                onFailure: function (inError) {
+                    DialogUtil.showAlert("Failed to get network state");
+                    // To-Do something
+                    return;
+                }
+            });*/
+
+
+		});
+
+		function clickMenu(__menuPos) {
+			menuPos = __menuPos;
+			subMenuPos = 0;
+			onMenuFocus();
+			setMenuFocus(3);
+            sessionStorage.setItem("homeInitObj", JSON.stringify({
+                onMenu: onMenu,
+                menuPos: menuPos,
+                subMenuPos: subMenuPos
+            }));
+            if (!onMenu) {
+                var url = menuList[menuPos][subMenuPos].url;
+                if (typeof url == "string") {
+                    videoObj = null;
+                    window.location.href = url;
+                } else if (typeof url == "function") url();
+            } else if (menuPos != 2) {
+                window.location.href = "vod.html?10" + menuPos;
+            }
+		}
+		
+		function clickLogin(_focusPos){
+			if(focusPos == 0){
+				window.location.href = "login.html";
+			}else if(focusPos == 1){
+				window.location.href = "register.html";
+			}
+		}
+		
+		function mouseOverLogin(_focusPos){
+			focusPos = _focusPos;
+			setPlayrecordFocus(focusPos);
+		}
+		
+		function mouseOverMenu(__menuPos){
+			menuPos = __menuPos;
+			subMenuPos = 0;
+			onMenuFocus();
+			setMenuFocus(3);
+		}
+		
+		function mouseOverSubMenu(__menuPos, __subMenuPos){
+			menuPos = Boolean(__menuPos) ? __menuPos : menuPos;
+			subMenuPos = Boolean(__subMenuPos) ? __subMenuPos : subMenuPos;
+			if (__subMenuPos == 0) {
+				subMenuPos = 0;
+			}
+			onMenuBlur();
+		}
+
+		function clickSubMenu(__menuPos, __subMenuPos) {
+			menuPos = Boolean(__menuPos) ? __menuPos : menuPos;
+			subMenuPos = Boolean(__subMenuPos) ? __subMenuPos : subMenuPos;
+			if (__subMenuPos == 0) {
+				subMenuPos = 0;
+			}
+			onMenuBlur();
+			setMenuFocus(2);
+			sessionStorage.setItem("homeInitObj", JSON.stringify({
+				onMenu: onMenu,
+				menuPos: menuPos,
+				subMenuPos: subMenuPos
+			}));
+			var url = menuList[menuPos][subMenuPos].url;
+			if (typeof url == "string") {
+				videoObj = null;
+				window.location.href = url;
+			} else if (typeof url == "function") url();
+		}
+
+		function setMenuFocus(status) {
+			$(".menuTitle").eq(oldMenuPos).removeClass("menuTitleFocus");
+			$(".menuTitle").eq(menuPos).addClass("menuTitleFocus");
+			$(".menuFocus").css("left", 162 + 160 * menuPos);
+			$("#subMenuBox").stop(true);
+			if (status == 2) {
+				$(".focus").hide();
+				setSubMenuFocus();
+				$("#subMenuBox").animate({
+					left: -1280 * menuPos
+				}, function() {
+					$(".focus").show();
+				});
+			} else {
+				$("#subMenuBox").animate({
+					left: -1280 * menuPos
+				});
+			}
+			oldMenuPos = menuPos;
+		}
+		
+		function setSubMenuFocus() {
+			var imgObj = menuList[menuPos][subMenuPos];
+			var tempTop = imgObj.top + 161,
+				tempLeft = menuPos == 2 ? imgObj.left + 166 : imgObj.left + 47;
+			$(".focus").css({
+				top: tempTop,
+				left: tempLeft,
+				width: imgObj.width,
+				height: imgObj.height
+			});
+		}
+		
+		function onMenuFocus() {
+			onMenu = true, $(".focus").hide(), $(".menuFocus").show();
+		}
+
+		function onMenuBlur() {
+			onMenu = false, $(".focus").show(), $(".menuFocus").hide();
+			setSubMenuFocus();
+		}
+		function initDate() {
+			var today = new Date();
+			$(".nowDate").html(today.format("yyyy/MM/dd") + "<br>" + ToolsUtil.dateToWeek(today));
+			$(".nowTime").text(today.format("hh:mm"));
+			window.setTimeout(initDate, 1e4);
+			$(".user").text("用户号：" + UserInfo.user);
+		}
+
+		function showAppDownloadBox() {
+			//$(".appDownloadBox").show();
+			DialogUtil.showAlert("提示", "目前属于试运营阶段，暂不提供APP版本！");
+		}
+
+		function  showSubscribeBox() {
+			window.setTimeout(function(){
+				window.location = "order.html";
+			},1000);
+		}
+		function getDevicesUUID(){
+            webOS.service.request("luna://com.webos.service.sm", {
+                    method: "deviceid/getIDs",
+                    parameters: {
+                        "idType": ["NDUID", "LGUDID"]
+                    },
+                    onSuccess: function (inResponse) {
+                        console.log("Result: " + JSON.stringify(inResponse));
+                        // To-Do something
+                    },
+                    onFailure: function (inError) {
+                console.log("Failed to get system ID information");
+                console.log("[" + inError.errorCode + "]: " + inError.errorText);
+                // To-Do something
+                return;
+            }
+        });
+
+        }
+		function clearStorage() {
+			FavoriteUtil.clear();
+			PlayrecordUtil.clear();
+			localStorage.removeItem("lastPlayMedia");
+			for (var key in localStorage) {
+				var checkKey = "cache_";
+				var tempKey = key.substring(0, checkKey.length);
+				if (tempKey == checkKey) localStorage.removeItem(key);
+			}
+			DialogUtil.showToast("清除缓存成功");
+		}
+		
+	</script>
+
+</html>

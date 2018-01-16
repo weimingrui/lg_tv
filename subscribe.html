@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			body {
+				font-size: 22px
+			}
+			.contentBox {
+				width: 1020px;
+				height: auto;
+				margin: 10px 130px;
+				border-radius: 6px;
+				background: rgba(0, 0, 0, .5)
+			}
+			.box {
+				display: none;
+				width: 980px;
+				padding: 20px
+			}
+			.buttons {
+				width: 100%;
+				padding-top: 20px;
+				text-align: center;
+				border-top: 1px solid #bfbfbf
+			}
+			.line {
+				width: 100%;
+				margin-bottom: 20px
+			}
+			.productBox {
+				padding: 10px;
+				max-height: 450px;
+				overflow: hidden
+			}
+			.product {
+				width: 100%;
+				text-align: left;
+				color: #f4f4f4;
+				border: 2px solid rgba(0, 0, 0, 0)
+			}
+			.qrcodeBox {
+				display: none;
+				position: absolute;
+				top: 70px;
+				left: 338px;
+				width: 600px;
+				height: 580px;
+				padding: 10px;
+				background: #FFF;
+				color: #000;
+				border: 2px solid rgba(240, 253, 0, .8);
+				box-shadow: 0 0 8px 3px rgba(240, 253, 0, .6);
+				z-index: 1010
+			}
+			input {
+				width: 325px;
+				padding: 5px;
+				font-size: 22px;
+				color: #d2d2d2;
+				background: rgba(0, 0, 0, 0);
+				border: 2px solid #d2d2d2
+			}
+			input:focus,
+			button:focus {
+				border: 2px solid rgba(24, 32, 87, .8);
+				box-shadow: 0 0 8px 3px rgba(24, 32, 87, .6)
+			}
+			button {
+				background: rgba(0, 0, 0, 0);
+				font-size: 22px
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="columnTitleBox">
+			<div class="columnTitle">订购</div>
+		</div>
+		<div class="contentBox">
+			<div class="box contentBox_0">
+				<div class="line" style="padding:5px 0;border-bottom:1px solid #bfbfbf;text-align:center">“朝歌视界”服务条款</div>
+				<div class="line" style="font-size:18px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;“朝歌视界”是朝歌数码面向海外华人推出的互联网电视应用，包含丰富的电视直播和视频点播，请在确认付费前仔细阅读下面的条款：</div>
+				<div class="line" style="font-size:18px">
+					<ul>
+						<li>我们所提供的所有内容，均经过合法授权，支付方式和途径经过正规认证，安全可靠，可放心使用。</li>
+						<li>您保证，在您同意接受本协议并注册成为收费会员时，您已年满18周岁，具有完全民事行为能力。</li>
+						<li>本公司会不定期推出不同的服务产品包供您选择，请您在确认购买前仔细了解产品包特性，我们不提供退订服务。</li>
+						<li>我们强烈建议您在付费后输入您的电话号码或email等资料，作为您的付费会员凭据，此凭据可以更好地保障您的付费权益。</li>
+						<li>如您不能提供上述信息，在您付费后，仍可以正常收看节目，但在您更换播放终端或系统发生意外的情况下，可能丢失付费信息，您将不得不再次支付费用。</li>
+						<li>我们尊重并保护您的个人隐私，您所提供的资料非经您亲自许可，或根据相关法律、法规的强制性规定，我们不会泄露给任何第三方。</li>
+						<li>请您充分阅读、理解本协议之全部内容，一旦您使用本服务，即表示您同意遵循本协议之所有约定。</li>
+					</ul>
+				</div>
+				<div class="line" style="text-align:center">
+					手机号码：
+					<input name="mobile" type="text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E-mail:
+					<input name="email" type="text">
+				</div>
+				<div class="buttons">
+					<button class="button" onclick="next();">我已阅读并同意全部服务条款</button>
+				</div>
+			</div>
+			<div class="box contentBox_1">
+				<div class="line" style="padding:5px 0;border-bottom:1px solid #bfbfbf">请选择产品包,按确认键并扫描二维码进行支付购买</div>
+				<div class="productBox"></div>
+			</div>
+		</div>
+		<div class="qrcodeBox">
+			<div>提示：使用手机扫描软件扫描下方二维码进行支付操作</div>
+			<div class="qrcode"></div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/jquery.qrcode.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var boxPos = 1,
+			focusPos = 0,
+			productList = new Array(),
+			mediaList = new Array(),
+			getMediaDetailCount = 0,
+			paymentLink = "";
+		var qrcodeBoxObj = new BoxObject(".qrcodeBox", 18e5, function() {
+			DialogUtil.hideLoading();
+			$(".maskLaye").show();
+			$(".qrcode").qrcode({
+				width: 600,
+				height: 550,
+				text: paymentLink
+			});
+		}, function() {
+			$(".maskLaye").hide();
+			$(".contentBox_1 button").eq(focusPos).focus();
+		});
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "subscribeList":
+					var result = data.result;
+					if (result.status == 200) {
+						if (Boolean(result.data)) {
+							var root = XMLUtil.loadXML(result.data);
+							var recordNodes = root.getElementsByTagName("subscribelist");
+							for (var i = 0; i < recordNodes.length; i++) {
+								var serviceId = XMLUtil.getAttributeValue(recordNodes[i], "sid");
+								for (var index in productList) {
+									if (serviceId == productList[index].id) {
+										productList.splice(index, 1);
+										break;
+									}
+								}
+							}
+						}
+					}
+					mediaList.length = productList.length;
+					$.each(productList, function() {
+						EPGSUtil.getMediaDetail(this.columnId, this.id, 0, 0, 0, "mediaDetail");
+					});
+					break;
+				case "product":
+					productList = data.result.list;
+					OISUtil.getSubscribeList(1, "subscribeList");
+					break;
+				case "mediaDetail":
+					for (var i = 0; i < productList.length; i++) {
+						if (productList[i].id == data.result.id) {
+							mediaList[i] = data.result;
+							getMediaDetailCount++;
+						}
+					}
+					if (getMediaDetailCount == productList.length) {
+						$.each(mediaList, function(i) {
+							var html = '<div class="line">';
+							html += '<button class="product" onClick="buy(' + i + ');"><div style="width:100%;padding:5px 0">' + this.title + "（价格：" + this.price / 100 + " 美元，有效期：" + this.duration / 24 + " 天）</div>";
+							if (Boolean(this.description)) {
+								html += '<div style="width:100%;padding:5px 0;font-size:18px;">' + this.description.replace(/\r\n/g, "<br/>") + "</div>";
+							} else {
+								html += "</button></div>";
+							}
+							$(".productBox").append(html);
+						});
+						DialogUtil.hideLoading();
+						if (boxPos == 1) $(".contentBox_0 button").focus();
+						else if (boxPos == 2) $(".contentBox_1 button:first").focus();
+					}
+					break;
+				case "buyProduct":
+					result = data.result;
+					if (result.status == 200) {
+						paymentLink = result.location;
+						qrcodeBoxObj.show();
+					} else if (result.status == 400) {
+						DialogUtil.showAlert("订购错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (result.status == 401) {
+						DialogUtil.showAlert("订购错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (result.status == 402) {
+						DialogUtil.showAlert("订购错误", "无效serviceId，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (result.status == 403) {
+						DialogUtil.showAlert("订购错误", "无效token，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (result.status == 409) {
+						DialogUtil.showAlert("温馨提示", "您已订购该产品包且在有效期内");
+					} else if (result.status == 500) {
+						DialogUtil.showAlert("订购错误", "服务器内部错误，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					}
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+			if (qrcodeBoxObj.showFlag) {
+				qrcodeBoxObj.hide();
+				return scrollFun(keyObj.event);
+			}
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (boxPos == 0 && focusPos == 1) {
+						focusPos = 0;
+						$(".contentBox_0 input").eq(focusPos).focus();
+					}
+					return scrollFun(keyObj.event);
+				case "DPAD_UP":
+					if (boxPos == 1) {
+						boxPos = focusPos = 0;
+						$(".contentBox_0 input").eq(focusPos).focus();
+					} else if (boxPos == 2) {
+						if (focusPos > 0) focusPos--;
+						$(".contentBox_1 button").eq(focusPos).focus();
+					}
+					return scrollFun(keyObj.event);
+				case "DPAD_RIGHT":
+					if (boxPos == 0 && focusPos == 0) {
+						focusPos = 1;
+						$(".contentBox_0 input").eq(focusPos).focus();
+					}
+					return scrollFun(keyObj.event);
+				case "DPAD_DOWN":
+					if (boxPos == 0) {
+						boxPos = 1;
+						$(".contentBox_0 button").focus();
+					} else if (boxPos == 2) {
+						if (focusPos < mediaList.length - 1) focusPos++;
+						$(".contentBox_1 button").eq(focusPos).focus();
+					}
+					return scrollFun(keyObj.event);
+				case "SYMBOL_DEL":
+					if (boxPos == 0 && $(".contentBox_0 input").eq(focusPos).val().length > 0) {
+						var value = $(".contentBox_0 input").eq(focusPos).val();
+						$(".contentBox_0 input").eq(focusPos).val(value.substring(0, value.length - 1));
+					}
+					return scrollFun(keyObj.event);
+				case "NAV_BACK":
+					if (boxPos == 2 && !Boolean(UserInfo.mobile) && !Boolean(UserInfo.email)) {
+						boxPos = 1, focusPos = 0;
+						$(".contentBox_1").hide();
+						$(".contentBox_0").show();
+						$(".contentBox_0 button").focus();
+					} else window.location.href = "home.html";
+					return scrollFun(keyObj.event);
+			}
+		}
+		$(function() {
+			DialogUtil.showLoading();
+			if (!Boolean(UserInfo.mobile) && !Boolean(UserInfo.email)) {
+				$(".contentBox_0").show();
+			} else {
+				boxPos = 2;
+				$(".contentBox_1").show();
+			}
+			EPGSUtil.getMediaByColumnId(99, 0, 0, 100, "product");
+		});
+
+		function onEPGSLoad() {}
+
+		function next() {
+			if ($.trim($("input[name='mobile']").val()).length > 0 || $.trim($("input[name='email']").val()).length > 0) {
+				OISUtil.modifyUserInfo($.trim($("input[name='mobile']").val()), $.trim($("input[name='email']").val()));
+			}
+			boxPos = 2, focusPos = 0;
+			$(".contentBox_0").hide();
+			$(".contentBox_1").show();
+			$(".contentBox_1 button:first").focus();
+		}
+
+		function buy(index) {
+			var mediaObj = mediaList[index];
+			if (mediaObj.price > 0) {
+				OISUtil.buy(mediaObj.id, mediaObj.title, "buyProduct");
+				$(".productBox button").blur();
+				$(".qrcode").empty();
+				DialogUtil.showLoading("加载中...");
+			} else {
+				DialogUtil.showToast("该套餐无需支付");
+			}
+		}
+	</script>
+
+</html>

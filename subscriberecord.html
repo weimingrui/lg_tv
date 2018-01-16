@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.focus {
+				display: none
+			}
+			.recordBox {
+				position: absolute;
+				top: 80px;
+				left: 60px;
+				width: 1160px;
+				height: 640px
+			}
+			.record {
+				width: 1150px;
+				padding: 30px 5px 10px 5px;
+				border-bottom: 1px solid #bfbfbf
+			}
+			.service {
+				width: 400px
+			}
+			.price {
+				width: 150px;
+				text-align: right
+			}
+			.startTime,
+			.endTime {
+				width: 300px;
+				text-align: right
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="focus"></div>
+		<div class="columnTitleBox">
+			<div class="columnTitle">订购记录</div>
+		</div>
+		<div class="recordBox"></div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.min.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var focusPos = recordPos = 0,
+			productList = new Array(),
+			recordList = new Array();
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "product":
+					productList = data.result.list;
+					OISUtil.getSubscribeList(0, "subscribeRecord");
+					break;
+				case "subscribeRecord":
+					var result = data.result;
+					if (result.status == 200) {
+						if (Boolean(result.data)) {
+							var root = XMLUtil.loadXML(result.data);
+							var recordNodes = root.getElementsByTagName("subscribelist");
+							for (var i = 0; i < recordNodes.length; i++) {
+								recordList.push({
+									serviceId: XMLUtil.getAttributeValue(recordNodes[i], "sid"),
+									price: XMLUtil.getAttributeValue(recordNodes[i], "price"),
+									startUtc: XMLUtil.getAttributeValue(recordNodes[i], "start_utc"),
+									endUtc: XMLUtil.getAttributeValue(recordNodes[i], "end_utc")
+								});
+							}
+							$.each(recordList, function() {
+								var html = '<div class="record">';
+								var productObj = ToolsUtil.match(productList, {
+									id: this.serviceId
+								});
+								if (Boolean(productObj)) html += '<div class="service">产品包：' + productObj.title + "</div>";
+								else html += '<div class="service">产品包：' + this.serviceId + "</div>";
+								html += '<div class="price">价格：' + this.price / 100 + ' 美元</div><div class="startTime">开始时间：' + ToolsUtil.formatUTC(this.startUtc * 1e3, "yyyy/MM/dd hh:mm:ss") + "</div>";
+								html += '<div class="endTime">结束时间：' + ToolsUtil.formatUTC(this.endUtc * 1e3, "yyyy/MM/dd hh:mm:ss") + "</div></div>";
+								$(".recordBox").append(html);
+							});
+							totalCount = recordList.length;
+							if (recordList.length > 0) setRecordFocus();
+							DialogUtil.hideLoading();
+						}
+					}
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+			switch (keyObj.str) {
+				case "DPAD_UP":
+					if (recordPos > 0) recordPos--;
+					if (focusPos > 0) focusPos--;
+					setRecordFocus();
+					break;
+				case "DPAD_DOWN":
+					if (recordPos < recordList.length - 1) recordPos++;
+					if (focusPos < 9 && focusPos < recordList.length - 1) focusPos++;
+					setRecordFocus();
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			DialogUtil.showLoading();
+			EPGSUtil.getMediaByColumnId(99, 0, 0, 100, "product");
+		});
+
+		function onEPGSLoad() {}
+
+		function setRecordFocus() {
+			$(".focus").show();
+			$(".focus").css({
+				top: 103 + focusPos * 64,
+				left: 58,
+				width: 1160,
+				height: 34
+			});
+			$(".recordBox").css({
+				top: 80 - 64 * Math.floor((recordPos - focusPos) / 10)
+			});
+			$(".totalCount").html("(" + (recordPos + 1) + "/" + totalCount + ")");
+		}
+	</script>
+
+</html>

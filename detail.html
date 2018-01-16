@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.backgroundImage {
+				display: none;
+				width: 1280px;
+				height: 720px;
+			}
+			.focus {
+				display: none
+			}
+			.playRecordBox {
+				display: none;
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 3
+			}
+			.imageBox {
+				width: 280px;
+				height: 100%
+			}
+			.infoBox {
+				width: 920px;
+				height: 100%;
+				margin: 0 40px
+			}
+			.title,
+			.subTitle,
+			.area,
+			.category,
+			.score,
+			.director,
+			.actor {
+				padding: 5px 0;
+				white-space: nowrap;
+				overflow: hidden
+			}
+			.title {
+				margin-top: 27px;
+				font-size: 32px
+			}
+			.subTitle {
+				margin-top: 38px;
+				color: #f0fd00;
+				font-size: 20px;
+			}
+			.area,
+			.category {
+				margin-top: 50px;
+				padding: 0 10px
+			}
+			.area {
+				border-right: 1px solid #bfbfbf
+			}
+			.score {
+				margin-top: 33px;
+				padding: 5px;
+				color: #f0fd00;
+				font-size: 28px;
+				font-style: oblique
+			}
+			.director,
+			.actor,
+			.description {
+				width: 100%;
+				height: 24px
+			}
+			.description {
+				height: 136px;
+				line-height: 34px;
+				padding: 5px 0;
+				overflow: hidden;
+				color: #959595
+			}
+			.buttons {
+				margin-top: 22px
+			}
+			.buttons img {
+				float: left;
+				margin-right: 20px
+			}
+			.selectsetBox,
+			.selectset,
+			.subTitle {
+				display: none
+			}
+			.relateBox,
+			.selectsetBox {
+				position: absolute
+			}
+			.relateBox {
+				top: 22px
+			}
+			.selectsetBox {
+				top: 0;
+				width: 1280px;
+				background: rgba(0, 0, 0, 0.5)
+			}
+			.serial {
+				width: 63px;
+				height: 21px;
+				margin: 10px;
+				padding: 5px 0;
+				text-align: center;
+				border: 1px solid #bfbfbf;
+				background: #000
+			}
+			.vodTitle {
+				color: #959595
+			}
+			.confrim {
+				background: url(img/confrim_bg_2.png);
+			}
+			.confrim-btn {
+				background: url(img/confrim_btn_2.png);
+			}
+			.cancel-btn {
+				background: url(img/cancel_btn_2.png);
+			}
+		</style>
+	</head>
+
+	<body>
+		<img class="backgroundImage">
+		<div style="position:absolute;top:0px;left:0px;width:1280px;height:720px">
+			<div class="focus" onclick="clickDetail(boxPos,focusPos);"></div>
+			<div class="playRecordBox">
+				<div class="confrim" style="z-index:4;">
+					<div class="confrimText"></div>
+					<div class="confrim-btn" onclick="clickLogin(0)" onmouseover="mouseOverLogin(0)" onmouseout="mouseOverLogin(1)"></div>
+					<div class="cancel-btn" onclick="clickLogin(1)" onmouseover="mouseOverLogin(1)" onmouseout="mouseOverLogin(0)"></div>
+				</div>
+			</div>
+			<div style="height:399px;border-bottom:1px solid #bfbfbf;overflow:hidden;">
+				<div class="imageBox"></div>
+				<div class="infoBox">
+					<div style="width:100%;height:79px;border-bottom:1px solid #bfbfbf;">
+						<div class="title"></div>
+						<div class="subTitle"></div>
+						<div style="float:right;">
+							<div class="area"></div>
+							<div class="category"></div>
+							<div class="score"></div>
+						</div>
+					</div>
+					<div class="director" style="margin-top:15px"></div>
+					<div class="actor"></div>
+					<div class="description"></div>
+					<div class="buttons">
+						<img class="play" onclick="clickDetail(0,0)" onmouseover="mouseOverButton(0,0);" src="img/detail_play_btn.png">
+						<img class="selectset" onclick="clickDetail(0,1)" onmouseover="mouseOverButton(0,1);" src="img/detail_selectset_btn.png">
+						<img class="favorite" onclick="clickDetail(0,2)" onmouseover="mouseOverButton(0,2);" src="img/detail_favorite_btn.png">
+					</div>
+				</div>
+			</div>
+			<div id="mediaScroll" style="width:100%;height:320px;overflow-y: auto;" onscroll="scrollCategory(this,boxPos);">
+				<div class="relateBox"></div>
+				<div class="selectsetBox"></div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/reflex2.min.js"></script>
+	<script type="text/javascript" src="js/comm.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var scrollLeft = 0;
+		var scrollPos = 0;
+		var extraScrollLeft = 0;
+		var topValue = 0, // 上次滚动条到顶部的距离  
+			interval = null; // 定时器
+		var mediaId = relateId = ToolsUtil.getHrefParams("mid"),
+			columnId = ToolsUtil.getHrefParams("cid");
+		var meidaObj = null,
+			playrecordObj = null,
+			playAuthenObj = null,
+			urlList = new Array(),
+			relateList = new Array();
+		var bigImage = false,
+			favoriteFlag = false,
+			boxPos = 0,
+			focusPos = 0,
+			contentPos = 0,
+			maxBtnPos = 1,
+			playTime = 0;
+		var flag = false;
+		var playRecordBoxObj = new BoxObject(".playRecordBox", 0, function() {
+			focusPos = 0;
+			$(".confrimText").css("line-height", "71px");
+			$(".confrimText").html("您上次播放到：" + ToolsUtil.formatTime(playrecordObj.playTime) + "<br>是否继续播放？");
+			setPlayrecordFocus();
+		}, function() {
+			if (focusPos == 0) playTime = playrecordObj.playTime;
+			else playTime = 0;
+			play();
+		});
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "mediaDetail":
+					mediaObj = data.result;
+					if (!Boolean(mediaObj.id)) {
+						DialogUtil.hideLoading();
+						FavoriteUtil.remove(mediaId);
+						PlayrecordUtil.remove(mediaId);
+						break;
+					}
+					urlList = mediaObj.urls;
+					urlList.sort(function(a, b) {
+						return a.serial > b.serial ? 1 : -1;
+					});
+					if (mediaObj.price != 0) {
+						OISUtil.playAuthen(mediaObj.id, "playAuthen");
+					} else {
+						playAuthenObj = {
+							status: 200,
+							watchDuration: -1
+						};
+					}
+					checkImage(mediaObj.image);
+					if (mediaObj.meta != 1 && mediaObj.meta != 6) {
+						maxBtnPos = 2;
+						if (mediaObj.meta != 2) {
+							if (ToolsUtil.getStringLength(mediaObj.title) > 18) $(".title").html('<marquee width="310" align="absmiddle" behavior="scroll">' + mediaObj.title + "</marquee>");
+							else $(".title").html(mediaObj.title);
+							if (ToolsUtil.getStringLength(urlList[contentPos].title) > 31) $(".subTitle").html('<marquee width="310" align="absmiddle" behavior="scroll">（' + urlList[contentPos].title + "）</marquee>");
+							else $(".subTitle").html("（" + urlList[contentPos].title + "）");
+							$(".subTitle").show();
+						} else {
+							if (ToolsUtil.getStringLength(mediaObj.title) > 32) $(".title").html('<marquee width="620" align="absmiddle" behavior="scroll">' + mediaObj.title + "</marquee>");
+							else $(".title").html(mediaObj.title);
+							$(".subTitle").hide();
+						}
+						$(".selectset").show();
+					} else {
+						if (ToolsUtil.getStringLength(mediaObj.title) > 32) $(".title").html('<marquee width="620" align="absmiddle" behavior="scroll">' + mediaObj.title + "</marquee>");
+						else $(".title").html(mediaObj.title);
+						$(".selectset").hide();
+					}
+					//$(".area").html(mediaObj.area);
+					//$(".category").html(mediaObj.category);
+					$(".score").html("评分：" + mediaObj.score);
+					$(".director").html("导演：" + mediaObj.director);
+					$(".actor").html("主演：" + mediaObj.actor);
+					$(".description").html("简介：" + mediaObj.description);
+					favoriteFlag = FavoriteUtil.check(mediaObj.id);
+					if (favoriteFlag) $(".favorite").attr("src", "img/detail_cancel_favorite_btn.png");
+					else $(".favorite").attr("src", "img/detail_favorite_btn.png");
+					$(".selectsetBox").height(Math.ceil(urlList.length / 15) > 6 ? Math.ceil(urlList.length / 15) * 53 : 320);
+					$.each(urlList, function(i) {
+						$(".selectsetBox").append('<div class="serial" onclick="clickSerial(' + i + ');" onmouseover="mouseOverSerial(2,'+i+','+i+')">' + this.serial + "</div>");
+					});
+					break;
+				case "mediaRelate":
+					relateList = data.result;
+					$(".relateBox").width(200 * relateList.length);
+					$.each(relateList, function(i) {
+						$(".relateBox").append(mediaHtml(i, this));
+					});
+					break;
+				case "playAuthen":
+					if (mediaId == data.mark) {
+						playAuthenObj = data.result;
+						if (playAuthenObj.status == 200) {
+							$(".play").attr("src", "img/detail_play_btn.png");
+						} else if (playAuthenObj.status == 406) {
+							$(".play").attr("src", "img/detail_try_see_btn.png");
+						}
+					}
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (playRecordBoxObj.showFlag && focusPos > 0) {
+						focusPos--;
+						setPlayrecordFocus();
+					}else if(!playRecordBoxObj.showFlag ){
+                        if (boxPos == 0 && focusPos > 0) {
+                            focusPos--;
+                            setButtonFocus();
+                        } else if (boxPos == 1) {
+                            if (contentPos > 0) contentPos--;
+                            else break;
+                            if (focusPos > 0) focusPos--;
+                            setRelateFocus();
+                        } else if (boxPos == 2) {
+                            if (contentPos > 0) contentPos--;
+                            else break;
+                            if (focusPos == 0) focusPos = 14;
+                            else focusPos--;
+                            setSelectsetFocus();
+                        }
+                    }
+					break;
+				case "DPAD_UP":
+                    if (playRecordBoxObj.showFlag){
+                        break;
+                    }
+					if (boxPos == 1) {
+						boxPos = focusPos = contentPos = 0;
+						setButtonFocus();
+					} else if (boxPos == 2) {
+						if (contentPos < 15) {
+							boxPos = 0, focusPos = 1, contentPos = 0;
+							if (mediaObj.meta != 2) $(".subTitle").html("（" + urlList[contentPos].title + "）");
+							$(".selectsetBox").hide();
+							$(".relateBox").show();
+							setButtonFocus();
+						} else {
+							contentPos -= 15;
+							if (focusPos > 14) focusPos -= 15;
+							setSelectsetFocus();
+						}
+					}
+					break;
+				case "DPAD_RIGHT":
+					if (playRecordBoxObj.showFlag && focusPos < 1) {
+						focusPos++;
+						setPlayrecordFocus();
+					} else if (!playRecordBoxObj.showFlag){
+                        if (boxPos == 0 && focusPos < maxBtnPos) {
+                            focusPos++;
+                            setButtonFocus();
+                        } else if (boxPos == 1) {
+                            if (contentPos < relateList.length - 1) contentPos++;
+                            else break;
+                            if (focusPos < 5) focusPos++;
+                            setRelateFocus();
+                        } else if (boxPos == 2) {
+                            if (contentPos < urlList.length - 1) contentPos++;
+                            else break;
+                            if (focusPos == 89) focusPos = 75;
+                            else focusPos++;
+                            setSelectsetFocus();
+                        }
+                    }
+					break;
+				case "DPAD_DOWN":
+                    if (playRecordBoxObj.showFlag){
+                        break;
+                    }
+					if (boxPos == 0) {
+						boxPos = 1, focusPos = 0;
+						var left = parseInt($(".relateBox").position().left);
+						contentPos = -left / 200;
+						setRelateFocus();
+					} else if (boxPos == 2) {
+						if (contentPos < Math.floor((urlList.length - 1) / 15) * 15) {
+							contentPos += 15;
+							if (contentPos > urlList.length - 1) contentPos = urlList.length - 1;
+						} else break;
+						if (focusPos < 75 && focusPos % 15 == contentPos % 15) focusPos += 15;
+						else if (focusPos % 15 != contentPos % 15) {
+							if (focusPos < 75) focusPos = Math.floor((focusPos + 15) / 15) * 15 + contentPos % 15;
+							else focusPos = 75 + contentPos % 15;
+						}
+						setSelectsetFocus();
+					}
+					break;
+				case "DPAD_OK":
+					if (playRecordBoxObj.showFlag) {
+						playRecordBoxObj.hide();
+					} else if (boxPos == 0) {
+						if (focusPos == 0) {
+							if (chechPlayAuthen()) {
+                                checkPlayRecord(false)
+								/*if (checkPlayRecord(false)) playRecordBoxObj.show();
+								else */
+                                play();
+							} else break;
+						} else if (focusPos == 1) {
+							if (maxBtnPos == 1) savaFavourite();
+							else {
+								boxPos = 2, focusPos = contentPos = 0;
+								$(".relateBox").hide();
+								$(".selectsetBox").show();
+								setSelectsetFocus();
+							}
+						} else savaFavourite();
+					} else if (boxPos == 1) {
+						if (mediaId == relateList[contentPos].id) break;
+						DialogUtil.showLoading();
+						mediaId = relateList[contentPos].id, playTime = 0;
+						$(".backgroundImage").hide();
+						$(".imageBox").empty();
+						$(".title").empty();
+						$(".area").empty();
+						$(".category").empty();
+						$(".score").empty();
+						$(".director").empty();
+						$(".actor").empty();
+						$(".description").empty();
+						$(".selectsetBox").empty();
+						EPGSUtil.getMediaDetail(columnId, mediaId, 0, 0, 0, "mediaDetail");
+					} else if (boxPos == 2) {
+						if (chechPlayAuthen()) {
+							/*if (checkPlayRecord(true)) playRecordBoxObj.show();
+							else*/
+                                play();
+						} else break;
+					}
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			DialogUtil.showLoading();
+			if (Boolean(sessionStorage.getItem("detailInitObj"))) {
+				var detailInitObj = JSON.parse(sessionStorage.getItem("detailInitObj"));
+				mediaId = detailInitObj.mediaId;
+				relateId = detailInitObj.relateId;
+				sessionStorage.removeItem("detailInitObj");
+			}
+			EPGSUtil.getMediaDetail(columnId, mediaId, 0, 0, 0, "mediaDetail");
+			EPGSUtil.getMediaRelate(columnId, relateId, 10, "mediaRelate");
+		});
+		
+		function mouseOverButton(__boxPos,__focusPos){
+			boxPos = __boxPos;
+			focusPos = __focusPos;
+			$(".focus").removeAttr("onclick");
+			$(".focus").attr("onclick", "clickDetail("+boxPos+","+focusPos+")");
+			if (__focusPos == 2) {
+				if ($(".selectset").is(":visible") == false) {
+					__focusPos = 1;
+					focusPos = __focusPos;
+				}
+			}
+			setButtonFocus();
+		}
+		
+		function mouseOverRelate(__boxPos,__focusPos,__contentPos){
+			boxPos = __boxPos;
+			focusPos = __focusPos%5;
+			contentPos = __contentPos;
+			$(".focus").removeAttr("onclick");
+			$(".focus").attr("onclick", "clickMedia("+__contentPos+")");
+			setRelateFocus();
+		}
+		
+		function mouseOverSerial(__boxPos,__focusPos,__contentPos){
+			boxPos = __boxPos;
+			focusPos = __focusPos;
+			contentPos = __contentPos;
+			$(".focus").removeAttr("onclick");
+			$(".focus").attr("onclick","clickSerial("+__contentPos+")");
+			setSelectsetFocus();
+		}
+		
+		function clickDetail(__boxPos, __focusPos) {
+			if (__focusPos == 2) {
+				if ($(".selectset").is(":visible") == false) {
+					__focusPos = 1;
+				}
+			}
+			if (boxPos == 2) {
+				$(".focus").removeAttr("onclick");
+				$(".focus").attr("onclick", "clickDetail(boxPos,focusPos)");
+				$(".selectsetBox").hide();
+				$(".relateBox").show();
+				boxPos = __boxPos;
+				focusPos = __focusPos;
+				setButtonFocus();
+				if (playRecordBoxObj.showFlag) {
+					playRecordBoxObj.hide();
+				} else if (boxPos == 0) {
+					if (focusPos == 0) {
+						if (chechPlayAuthen()) {
+							/*if (checkPlayRecord(false)) playRecordBoxObj.show();
+							else*/
+                                play();
+						} else return false;
+					} else if (focusPos == 1) {
+						if (maxBtnPos == 1) savaFavourite();
+					} else savaFavourite();
+				}
+				boxPos = 0;
+			} else if (__boxPos == 0) {
+				boxPos = __boxPos;
+				focusPos = __focusPos;
+				setButtonFocus();
+				if (playRecordBoxObj.showFlag) {
+					playRecordBoxObj.hide();
+				} else if (boxPos == 0) {
+					if (focusPos == 0) {
+						if (chechPlayAuthen()) {
+                            checkPlayRecord(false);
+							/*if (checkPlayRecord(false)) playRecordBoxObj.show();
+							else */
+                                play();
+						} else return false;
+					} else if (focusPos == 1) {
+						if (maxBtnPos == 1) savaFavourite();
+						else if(flag){
+							$(".relateBox").show();
+							$(".selectsetBox").hide();
+							flag = false;
+						}else {
+							boxPos = 2, focusPos = contentPos = 0;
+							$(".focus").removeAttr("onclick");
+							$(".focus").attr("onclick", "clickSerial(focusPos)");
+							$(".relateBox").hide();
+							$(".selectsetBox").show();
+							flag = true;
+							setSelectsetFocus();
+						}
+					} else savaFavourite();
+				}
+			}
+		}
+		
+		function clickLogin(_focusPos){
+			if (_focusPos == 0) playTime = playrecordObj.playTime;
+			else playTime = 0;
+			play();
+		}
+		
+		function mouseOverLogin(_focusPos){
+			focusPos = _focusPos;
+			setPlayrecordFocus(focusPos);
+		}
+		
+		function clickMedia(__contentPos) {
+			focusPos = __contentPos - scrollPos;
+			boxPos = 1;
+			contentPos = __contentPos;
+			setRelateFocus(1);
+			if (playRecordBoxObj.showFlag) {
+				playRecordBoxObj.hide();
+			} else if (boxPos == 1) {
+				if (mediaId == relateList[contentPos].id) return;
+				DialogUtil.showLoading();
+				mediaId = relateList[contentPos].id, playTime = 0;
+				$(".backgroundImage").hide();
+				$(".imageBox").empty();
+				$(".title").empty();
+				$(".area").empty();
+				$(".category").empty();
+				$(".score").empty();
+				$(".director").empty();
+				$(".actor").empty();
+				$(".description").empty();
+				$(".selectsetBox").empty();
+				EPGSUtil.getMediaDetail(columnId, mediaId, 0, 0, 0, "mediaDetail");
+			} else if (boxPos == 2) {
+				if (chechPlayAuthen()) {
+					/*if (checkPlayRecord(true)) playRecordBoxObj.show();
+					else*/
+                        play();
+				} else return;
+			}
+		}
+
+		function clickSerial(i) {
+			contentPos = i;
+			if (boxPos == 2) {
+				if (chechPlayAuthen()) {
+					/*if (checkPlayRecord(true)) playRecordBoxObj.show();
+					else */
+                        play();
+				} else return;
+			}
+		}
+
+		function scrollCategory(__this, __boxPos) {
+			$(".focus").hide();
+			scrollLeft = $(__this).scrollLeft();
+			scrollPos = Math.ceil(scrollLeft / 200);
+			if (interval == null) {
+				interval = setInterval("test()", 1000);
+			}
+			topValue = scrollLeft;
+		}
+
+		function test() {
+			if ($("#mediaScroll").scrollLeft() == topValue && boxPos == 1) {
+				$(".focus").show();
+				$("#mediaScroll").scrollLeft(200 * scrollPos);
+				if (contentPos >= scrollPos && contentPos <= scrollPos + 5 && boxPos == 1) {
+					if ((scrollLeft) % 200 != 0) {
+						extraScrollLeft = 200 - ((scrollLeft) % 200);
+					} else {
+						extraScrollLeft = 0;
+					}
+					$(".focus").show();
+					$(".focus").css({
+						top: 425,
+						left: 17 + (contentPos - scrollPos) * 200 + extraScrollLeft,
+						width: 160,
+						height: 230
+					});
+				} else {
+					$(".focus").hide();
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function onEPGSLoad() {}
+
+		function setButtonFocus() {
+			clearMarquee();
+			$(".focus").show();
+			var left = bigImage ? 39 : 319;
+			$(".focus").css({
+				top: 330,
+				left: left + focusPos * 153,
+				width: 129,
+				height: 53
+			});
+		}
+
+		function setRelateFocus(i) {
+			clearMarquee();
+			if (i == undefined) {
+				if (contentPos > focusPos) {
+					$("#mediaScroll").scrollLeft((contentPos - focusPos) * 200);
+				} else {
+					$("#mediaScroll").scrollLeft((contentPos - focusPos) * 200);
+				}
+			}
+			if ((scrollLeft) % 200 != 0) {
+				extraScrollLeft = 200 - ((scrollLeft) % 200);
+			} else {
+				extraScrollLeft = 0;
+			}
+			$(".focus").show();
+			$(".focus").css({
+				top: 425,
+				left: 17 + (contentPos - scrollPos) * 200 + extraScrollLeft,
+				width: 160,
+				height: 230
+			});
+			/*$(".relateBox").css({
+				left: (focusPos - contentPos) * 200
+			});*/
+			addMarquee();
+		}
+
+		function setSelectsetFocus() {
+			if (mediaObj.meta != 2) {
+				if (ToolsUtil.getStringLength(urlList[contentPos].title) > 18) $(".subTitle").html('<marquee width="350" align="absmiddle" behavior="scroll">（' + urlList[contentPos].title + "）</marquee>");
+				else $(".subTitle").html("（" + urlList[contentPos].title + "）");
+			}
+			$(".focus").css({
+				top: 407 + Math.floor(focusPos / 15) * 53,
+				left: 7 + focusPos % 15 * 85,
+				width: 65,
+				height: 33
+			});
+			$(".selectsetBox").css({
+				top: Math.floor((focusPos - contentPos) / 15) * 53
+			});
+		}
+
+		function setPlayrecordFocus() {
+			if (focusPos == 0) {
+				$(".cancel-btn").css("visibility", "hidden");
+				$(".confrim-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".confrim-btn").css("visibility", "hidden");
+				$(".cancel-btn").css("visibility", "visible");
+			}
+		}
+
+		function clearMarquee() {
+			$(".vodTitle marquee").each(function() {
+				var $this = $(this);
+				$this.parent().html($this.html());
+			});
+		}
+
+		function addMarquee() {
+			var title = relateList[contentPos].title;
+			if (ToolsUtil.getStringLength(title) > 18) $($(".vodTitle")[contentPos]).html('<marquee width="162" height="24" align="absmiddle" behavior="scroll">' + title + "</marquee>");
+		}
+
+		function mediaHtml(i, mediaObj) {
+			var html = '<div class="vod" onclick="clickMedia(' + i + ')" onmouseover="mouseOverRelate(1,'+i+','+i+')"><div class="vodImg">';
+			html += '<img width="160" height="230" src="' + mediaObj.thumbnail + '"></div>';
+			html += '<div class="vodTitle">' + mediaObj.title + "</div></div>";
+			return html;
+		}
+
+		function checkImage(imageSrc) {
+			if (Boolean(imageSrc)) {
+				var image = new Image();
+				image.src = imageSrc;
+				image.onload = function() {
+					if (image.width / image.height > 1) {
+						bigImage = true;
+						$(".imageBox").hide();
+						$(".infoBox").width(1200);
+						$(".backgroundImage").show();
+						$(".backgroundImage").attr("src", imageSrc);
+					} else {
+						bigImage = false;
+						$(".backgroundImage").hide();
+						$(".imageBox").show();
+						$(".imageBox").html('<img style="margin:20px 0 0 40px" width="238" height="333" onload="invertedImage(this);" src="' + mediaObj.image + '">');
+						$(".infoBox").width(920);
+					}
+					if (boxPos == 0) setButtonFocus();
+					DialogUtil.hideLoading();
+				};
+			} else {
+				if (boxPos == 0) setButtonFocus();
+				DialogUtil.hideLoading();
+			}
+		}
+
+		function chechPlayAuthen() {
+			if (Boolean(playAuthenObj)) {
+				if (playAuthenObj.watchDuration == 0) {
+					if (playAuthenObj.status == 400) {
+						DialogUtil.showAlert("鉴权错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 401) {
+						DialogUtil.showAlert("鉴权错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 402) {
+						DialogUtil.showAlert("鉴权错误", "用户被禁止，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 403) {
+						DialogUtil.showAlert("鉴权错误", "无效token，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 404) {
+						DialogUtil.showAlert("鉴权错误", "无效mediaId，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 405) {
+						DialogUtil.showAlert("鉴权错误", "service未包含media，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 409) {
+						DialogUtil.showAlert("鉴权错误", "无效终端，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					} else if (playAuthenObj.status == 410) {
+						DialogUtil.showAlert("鉴权错误", "终端已禁止，请联系客服<br/>邮箱：channelchina@qcast.cn");
+					}
+					return false;
+				} else return true;
+			} else return false;
+		}
+
+		function checkPlayRecord(checkFlag) {
+			if (playAuthenObj.watchDuration != -1) return false;
+			playrecordObj = checkFlag ? PlayrecordUtil.check(mediaObj.id, mediaObj.urls[contentPos].url) : PlayrecordUtil.check(mediaObj.id);
+			if (Boolean(playrecordObj)) {
+				if (!checkFlag) {
+					for (var index in mediaObj.urls) {
+						if (playrecordObj.url == mediaObj.urls[index].url) {
+							contentPos = index;
+						}
+					}
+				}
+				return true;
+			} else return false;
+		}
+
+		function play() {
+			DialogUtil.showLoading("正在跳转...");
+			$(".focus").hide();
+			sessionStorage.setItem("detailInitObj", JSON.stringify({
+				mediaId: mediaId,
+				relateId: relateId
+			}));
+			sessionStorage.setItem("mediaObj", JSON.stringify(mediaObj));
+			window.location.href = "vodPlay.html?urlpos=" + contentPos + "&playtime=" + playTime + "&watchduration=" + playAuthenObj.watchDuration;
+		}
+
+		function savaFavourite() {
+			if (favoriteFlag) {
+				favoriteFlag = false;
+				FavoriteUtil.remove(mediaObj.id);
+				$(".favorite").attr("src", "img/detail_favorite_btn.png");
+				DialogUtil.showToast("取消收藏成功");
+			} else {
+				favoriteFlag = true;
+				FavoriteUtil.save(mediaObj);
+				$(".favorite").attr("src", "img/detail_cancel_favorite_btn.png");
+				DialogUtil.showToast("收藏成功");
+			}
+		}
+	</script>
+
+</html>

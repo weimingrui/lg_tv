@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	
+	<body>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js" ></script>
+	<script type="text/javascript" src="js/keyevent.min.js" ></script>
+	<script type="text/javascript">
+		function eventHandle(keyObj) {
+				switch (keyObj.str) {
+					case "DPAD_LEFT":
+						alert("left");
+						break;
+					case "DPAD_UP":
+						alert("up");
+						break;
+					case "DPAD_RIGHT":
+						alert("right");
+						break;
+					case "DPAD_DOWN":
+						alert("down");
+						break;
+					case "DPAD_OK":
+						alert("ok");
+						break;
+					case "NAV_BACK":
+						window.history.pushState('popstate','',null);
+						break;
+				}
+			}
+	</script>
+
+</html>

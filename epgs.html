@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html manifest="epgs.appcache">
+
+	<head>
+		<title>epgs.html</title>
+		<meta name="content-type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="public/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript">
+			window.onmessage = function(e) {
+				console.log(e.data);
+				var data = e.data;
+				console.log(data.url);
+				$.get(data.url, function(result) {
+					var resultData = {
+						event: data.event,
+						mark: data.mark,
+						result: result,
+						callBackEvent: data.callBackEvent
+					};
+					window.parent.postMessage(resultData, "*");
+				});
+			};
+		</script>
+	</head>
+
+	<body>
+		<p>This is epgs proxy</p>
+	</body>
+
+</html>

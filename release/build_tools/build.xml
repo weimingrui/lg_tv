@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<project name="Javascript compress project" basedir="." default="compile_test">
+    <taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask"
+             classpath="./compiler.jar"/>
+	<target name="compile_test">
+			<jscomp compilationLevel="simple" warning="quiet"
+					debug="false" output="../lgprotal.min.js" languageIn="ECMASCRIPT5">
+				<!--<externs dir="../../">
+					<file name="utils/global.js"/>
+				</externs>-->
+				
+				<sources dir="../../">
+					<file name="js/jquery-1.10.2.min.js"/>
+                    <file name="js/json2.min.js"/>
+                    <file name="js/comm.js"/>
+					<file name="js/config.js"/>
+					<file name="js/data.js"/>
+					<file name="js/keyevent.js"/>
+				</sources>
+			</jscomp>
+	</target>
+</project>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link rel="stylesheet" href="css/comm.css" />
+		<link rel="stylesheet" href="css/virtualkeyboard.css" />
+		<title>VIZIO</title>
+		<style>
+			input {
+				display: block;
+			}
+			
+			.onblur {
+				padding: 5px;
+			}
+		</style>
+	</head>
+
+	<body style="position: relative;">
+		<div style="width: 100%;">
+			<div style="width:100%;">
+				<div class="header">
+					<div class="step">
+						绑定信用卡
+					</div>
+					<div style="font-size: 1.3em;">
+						<div style="color: #F0FD00;">对不起,您还没有绑定信用卡.</div>请先绑定信用卡后再开始订购
+					</div>
+				</div>
+				<div class="logo"><img src="img/logo.png" /></div>
+			</div>
+		</div>
+		<div style="width: 100%;">
+			<div class="keyboardDiv" style="float: left;width: 50%;padding: 50px;padding-top: 30px;">
+				<div style="width: 100%;"><span id="keyboardSpan" style="font-size: 1.3em;"></span></div>
+				<div class="virtualcontent">
+				</div>
+				<div class="lastDiv" style="width: 100%;">
+					<div style="width: 100%;">
+						<li class="backNext">
+							<div class="keyback" style="float:left;" onclick="clickBut()"  onmouseover="mouseOverBut(0,true)">上一步</div>
+							<div class="keynext" style="float:right" onclick="clickBut()"  onmouseover="mouseOverBut(1,true)">下一步</div>
+						</li>
+					</div>
+				</div>
+			</div>
+			<div class="registInfo">
+				<input id="fuid" class="characterskey" readonly="readonly" tabindex="-1" type="text" placeholder="firstName(必填)" />
+				<input id="luid" class="characterskey" type="text" readonly="readonly" tabindex="-1" placeholder="lastName(必填)" />
+				<input id="cid" class="numkey" type="text" readonly="readonly" tabindex="-1" placeholder="卡号(必填)" />
+				<input id="poid" class="numkey" type="text" readonly="readonly" tabindex="-1" placeholder="邮政编码(必填)" />
+				<input id="vmid" class="monthkey" type="text" readonly="readonly" tabindex="-1" placeholder="有效期/月(必填)" />
+				<input id="vyid" class="yearkey" type="text" readonly="readonly" tabindex="-1" placeholder="有效期/年(必填)" />
+				<input id="sid" class="numkey" type="text" readonly="readonly" tabindex="-1" placeholder="安全码(必填)" />
+				<input id="aid1" class="characterskey" type="text" readonly="readonly" tabindex="-1" placeholder="地址一(必填)" />
+				<input id="aid2" class="characterskey" type="text" readonly="readonly" tabindex="-1" placeholder="地址二(可选)" />
+			</div>
+		</div>
+		<div style="padding: 20px;position: absolute;right: 0;bottom: 0;">
+			<div>客户服务：channelchina@qcast.cn</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script src="js/comm.min.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.js"></script>
+	<script type="text/javascript" src="js/virtual-keyboard.js"></script>
+	<script type="text/javascript">
+		var focusPos = 0;
+		var inputPos = 0;
+		var flag = true;
+		$(document).ready(function() {
+			if (Boolean(localStorage.getItem("UserInfo"))) {
+				UserInfo = JSON.parse(localStorage.getItem("UserInfo"));
+				if (Boolean(UserInfo.user)) {
+					BankAccountInfo.user = UserInfo.user;
+				}
+			}else{
+				DialogUtil.showAlert("绑定银行卡错误","未找到用户名");
+			}
+			virtualkeyboard.init($(".virtualcontent"));
+			$(".registInfo").find("input").each(function(i) {
+				virtualkeyboard.createkeyboard($(this));
+				if (i == 0) {
+					$(this).addClass("onfocus");
+					virtualkeyboard.showkeyboard($(this));
+				} else {
+					$(this).addClass("onblur");
+				}
+			});
+		});
+	
+		function eventHandle(keyObj) {
+			if (!virtualkeyboard.flag) {
+				focusBackNext($(".backNext"));
+				switch (keyObj.str) {
+					case "DPAD_LEFT":
+						if (focusPos != 0) {
+							focusPos = focusPos - 1;
+						}
+						focusBackNext($(".lastDiv .backNext"));
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_RIGHT":
+						if (focusPos < 1) {
+							focusPos = focusPos + 1;
+						}
+						focusBackNext($(".lastDiv .backNext"));
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_UP":
+						virtualkeyboard.flag = true;
+						focusPos = 0;
+						$(".lastDiv .backNext").children("div").css("border", "3px solid");
+						virtualkeyboard.backkeyboard();
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_DOWN":
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_OK":
+						okBackNext($(".onfocus"));
+						break;
+					case "NAV_BACK":
+						var value = $(".onfocus").val();
+						if ($(".onfocus").attr("class").indexOf("monthkey") > -1 || $(".onfocus").attr("class").indexOf("yearkey") > -1) {
+							value = "";
+						} else {
+							value = value.substring(0, value.length - 1);
+						}
+						$(".onfocus").val(value);
+						return scrollFun(keyObj.event);
+						break;
+				}
+				if (keyboardInput(keyObj.value) != null) {
+					var value = $(".onfocus").val();
+					if ($(".onfocus").attr("class").indexOf("monthkey") > -1 || $(".onfocus").attr("class").indexOf("yearkey") > -1) {
+						return scrollFun(keyObj.event);
+					}
+					virtualkeyboard.inputStr = keyboardInput(keyObj.value);
+					value += virtualkeyboard.inputStr;
+					$(".onfocus").val(value);
+					return scrollFun(keyObj.event);
+				}
+			} else {
+				keyboardEvent(keyObj);
+			}
+		};
+		
+		function clickBut(){
+			okBackNext($(".onfocus"));
+		}
+		
+		function mouseOverBut(__focusPos,__flag){
+			focusPos = __focusPos;
+			virtualkeyboard.flag = false;
+			if(virtualkeyboard.showType != "month"){
+				$(".virtualcontent").find("div").find("div").find("ul li div").css({
+					"border": "3px solid"
+				});
+				$(".month div").css({
+					"border": "none"
+				});
+			}
+			$(".lastDiv .backNext").find("div").each(function(i) {
+				if (focusPos == i) {
+					virtualkeyboard.setCss(this);
+				}
+			});
+			
+		}
+		
+		function mouseOverDown(){
+			virtualkeyboard.flag = true;
+			$(".lastDiv .backNext").find("div").css({
+				"border": "3px solid"
+			});
+		}
+		
+		function focusBackNext(__this) {
+			__this.find("div").each(function(i) {
+				if (focusPos == i) {
+					virtualkeyboard.setCss(this);
+				}
+			});
+		}
+
+		function okBackNext(__this) {
+			if (typeof __this == "object") {
+				if (focusPos == 0) {
+					if (__this.prev().length > 0) {
+						inputPos = inputPos - 1;
+						__this.removeClass("onfocus");
+						__this.addClass("onblur");
+						__this.prev().removeClass("onblur");
+						__this.prev().addClass("onfocus");
+						virtualkeyboard.showkeyboard(__this.prev());
+						return;
+					}else{
+						window.history.go(-1);
+					}
+				} else {
+					check_card();
+					if (flag) {
+						if (__this.next().length > 0) {
+							inputPos = inputPos + 1;
+							__this.removeClass("onfocus");
+							__this.addClass("onblur");
+							__this.next().removeClass("onblur");
+							__this.next().addClass("onfocus");
+							virtualkeyboard.showkeyboard(__this.next());
+							return;
+						} else {
+							DialogUtil.showLoading("正在绑定...");
+							OISUtil.bindBankAccount();
+							$(".lastDiv .backNext").children().css("border", "3px solid");
+						}
+					}
+				}
+			} else {
+				alert("element is not object");
+			}
+		}
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			var result = data.result;
+			switch (data.event) {
+				case "comm_bindBankAccount":
+					if (result.status == 200) {
+						DialogUtil.hideLoading();
+						window.location.href = "serviceTerms.html";
+					} else if (result.status == 400) {
+						DialogUtil.showAlert("绑定银行卡错误", "非法请求");
+					} else if (result.status == 401) {
+						DialogUtil.showAlert("绑定银行卡错误", "非法用户");
+					} else if (result.status == 402) {
+						DialogUtil.showAlert("绑定银行卡错误", "信息不全（ 必填项没有填）");
+					} else if (result.status == 403) {
+						DialogUtil.showAlert("绑定银行卡错误", "无效token");
+					} else if (result.status == 405) {
+						DialogUtil.showAlert("绑定银行卡错误", "无效信用卡");
+					} else if (result.status == 500) {
+						DialogUtil.showAlert("绑定银行卡错误", "服务器内部错");
+					} else if (result.status == 444) {
+						DialogUtil.showAlert("绑定银行卡错误", "IP列入黑名单");
+					};
+					break;
+			}
+		}
+		//验证银行卡的信息
+		function check_card() {
+			//获取各操作元素
+			var fuid = $("#fuid");
+			var luid = $("#luid");
+			var cid = $("#cid");
+			var poid = $("#poid");
+			var vmid = $("#vmid");
+			var vyid = $("#vyid");
+			var sid = $("#sid");
+			var aid1 = $("#aid1");
+			var aid2 = $("#aid2");
+			if (inputPos == 0) {
+				var firstName = fuid.val();
+				if (checkName(firstName,0)) {
+					BankAccountInfo.firstname = firstName;
+				}
+			}
+			if (inputPos == 1) {
+				var lastName = luid.val();
+				if (checkName(lastName,1)) {
+					BankAccountInfo.lastname = lastName;
+				}
+			}
+			if (inputPos == 2) {
+				var card = cid.val();
+				checkCard(card);
+			}
+			if (inputPos == 3) {
+				var postOffice = poid.val();
+				checkPostOffice(postOffice);
+			}
+			if (inputPos == 4) {
+				var vilidateMon = vmid.val();
+				if (vilidateMon == "") {
+					DialogUtil.showAlert("绑定银行卡错误", "过期月份不能为空");
+					flag = false;
+				}
+				flag = true;
+			}
+			if (inputPos == 5) {
+				var vilidateYear = vyid.val();
+				if (vilidateYear == "") {
+					DialogUtil.showAlert("绑定银行卡错误", "过期年份不能为空");
+					flag = false;
+				} else {
+					flag = true;
+					BankAccountInfo.month = vilidateMon;
+					BankAccountInfo.year = vilidateYear;
+					var vilidateMon = vmid.val();
+					if (vilidateMon.length == 6) {
+						var moon = vilidateMon.substring(1, 2);
+						moon = "0" + moon;
+						var year = vilidateYear;
+						var date = moon + year;
+					}
+					if (vilidateMon.length == 7) {
+						var moon = vilidateMon.substring(1, 3);
+						moon = moon;
+						var year = vilidateYear;
+						var date = moon + year;
+					}
+					BankAccountInfo.expdate = date;
+				}
+			}
+			if (inputPos == 6) {
+				var scode = sid.val();
+				checkCode(scode);
+			}
+			if (inputPos == 7) {
+				var address1 = aid1.val();
+				if (address1 == "") {
+					DialogUtil.showAlert("绑定银行卡错误", "该地址必须填写");
+					flag = false;
+				} else {
+					if (checkAddress(address1)) {
+						BankAccountInfo.street = address1;
+					}
+				}
+			}
+			if (inputPos == 8) {
+				var address2 = aid2.val();
+				if (address2 != "" && checkAddress(address2)) {
+					BankAccountInfo.street2 = address2;
+				}
+			}
+		}
+		//验证姓名
+		function checkName(str,id) {
+			var reg = /^[a-zA-Z·_ \-]+$/;
+			if (!reg.test(str) || str == "") {
+				if(id==0){
+					DialogUtil.showAlert("绑定银行卡错误", "名格式错误");
+				}else{
+					DialogUtil.showAlert("绑定银行卡错误", "姓格式错误");
+				}
+				flag = false;
+				return false;
+			}
+			flag = true;
+			return true;
+		}
+		//验证卡号
+		function checkCard(str) {
+			var reg = /^\d{16}$/;
+			if (!reg.test(str)) {
+				flag = false;
+				DialogUtil.showAlert("绑定银行卡错误", "银行卡号必须是十六位数字");
+			} else {
+				flag = true;
+				BankAccountInfo.acct = str;
+			}
+		}
+		//验证邮编必须是五位数字
+		function checkPostOffice(str) {
+			var reg = /^\d{5}$/;
+			if (!reg.test(str)) {
+				flag = false;
+				DialogUtil.showAlert("绑定银行卡错误", "邮政编码必须是五位数字");
+			} else {
+				flag = true;
+				BankAccountInfo.zip = str;
+			}
+		}
+		//验证安全码
+		function checkCode(str) {
+			var reg = /^\d{3}$/;
+			if (!reg.test(str)) {
+				flag = false;
+				DialogUtil.showAlert("绑定银行卡错误", "安全码必须由三位数字组成");
+			} else {
+				flag = true;
+				BankAccountInfo.cvv2 = str;
+			}
+		}
+		//验证地址
+		function checkAddress(str) {
+			var reg = /^[a-zA-Z0-9_.,&-]+$/;
+			if (!reg.test(str)) {
+				flag = false;
+				DialogUtil.showAlert("绑定银行卡错误", "用户地址格式错误");
+				return false;
+			} else {
+				flag = true;
+				return true;
+			}
+		}
+	</script>
+</html>

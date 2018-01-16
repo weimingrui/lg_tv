@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html manifest="ois.appcache">
+
+	<head>
+		<title>ois.html</title>
+		<meta name="content-type" content="text/html; charset=UTF-8">
+		<script type="text/javascript">
+			var SOAP_HEAD = "<?xml version='1.0' encoding='UTF-8'?>\r\n" + '<SOAP-ENV:Envelope xmlns:SOAP-ENV="default" ' + 'SOAP-ENV:encodingStyle="default">\r\n  <SOAP-ENV:Body>\r\n';
+			var SOAP_TAIL = "\r\n   </SOAP-ENV:Body>\r\n</SOAP-ENV:Envelope>\r\n";
+			var XMLHTTP = {
+				objPool: [],
+				getInstance: function() {
+					for (var i = 0; i < this.objPool.length; i++) {
+						if (this.objPool[i].readyState == 0 || this.objPool[i].readyState == 4) {
+							return this.objPool[i];
+						}
+					}
+					this.objPool[this.objPool.length] = this.createObj();
+					return this.objPool[this.objPool.length - 1];
+				},
+				createObj: function() {
+					var xmlHttpObj = null;
+					if (window.XMLHttpRequest) {
+						//Mozilla 浏览器
+						xmlHttpObj = new XMLHttpRequest();
+					} else if (window.ActiveXObject) {
+						//IE浏览器
+						try {
+							xmlHttpObj = new ActiveXObject("Msxml2.XMLHTTP");
+						} catch (e) {
+							try {
+								xmlHttpObj = new ActiveXObject("Microsoft.XMLHTTP");
+							} catch (e) {}
+						}
+					}
+					if (xmlHttpObj.readyState == null) {
+						xmlHttpObj.readyState = 0;
+						xmlHttpObj.addEventListener("load", function() {
+							xmlHttpObj.readyState = 4;
+							if (typeof xmlHttpObj.onreadystatechange == "function") {
+								xmlHttpObj.onreadystatechange();
+							}
+						}, false);
+					}
+					return xmlHttpObj;
+				},
+				send: function(xmlHttpObj, url, parameter, callback) {
+					xmlHttpObj.onreadystatechange = callback;
+					if (parameter == null) {
+						xmlHttpObj.open("GET", url, true);
+						xmlHttpObj.send(null);
+					} else {
+						xmlHttpObj.open("POST", url, true);
+						xmlHttpObj.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+						xmlHttpObj.send(parameter);
+					}
+				}
+			};
+			window.onmessage = function(e) {
+				console.log(e.data);
+				var data = e.data;
+				var param = SOAP_HEAD + data.param + SOAP_TAIL;
+				var xmlHttpObj = XMLHTTP.getInstance();
+				XMLHTTP.send(xmlHttpObj, data.url, param, function() {
+					if (xmlHttpObj.readyState == 4) {
+						var result = {
+							status: xmlHttpObj.status,
+							oisServer: xmlHttpObj.getResponseHeader("OIS"),
+							epgsServer: xmlHttpObj.getResponseHeader("EPGS"),
+							oisToken: xmlHttpObj.getResponseHeader("Token"),
+							epgsToken: xmlHttpObj.getResponseHeader("EPGS-Token"),
+							location: xmlHttpObj.getResponseHeader("Location"),
+							data: xmlHttpObj.responseText
+						};
+						var resultData = {
+							event: data.event,
+							mark: data.mark,
+							result: result,
+							callBackEvent: data.callBackEvent
+						};
+						window.parent.postMessage(resultData, "*");
+					}
+				});
+			};
+		</script>
+	</head>
+
+	<body>
+		<p>This is ois proxy</p>
+	</body>
+
+</html>

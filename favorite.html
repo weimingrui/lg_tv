@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.focus {
+				display: none
+			}
+			.confrimBox {
+				display: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2
+			}
+			.mediaBox {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="focus" onclick="clickMedia(mediaPos)"></div>
+		<div class="columnTitleBox">
+			<div class="columnTitleColor"></div>
+			<div class="columnTitle">
+				收藏记录    
+				<span style="font-size: 30PX;">Favorite</span>								
+			</div>
+			<img class="clearBtn" onclick="clearMedia();" onmouseover="mouseOverMediaBtn();" src="img/clear_btn.png">
+		</div>
+		<div id="mediaScroll" style="width:1220px;height:600px;margin:20px 40px 0;overflow-y:auto;" onscroll="scrollMedia(this)">
+			<div class="mediaBox"></div>
+		</div>
+		<div class="confrimBox">
+			<div class="confrim" style="z-index:3">
+				<div class="confrimText" style="position: absolute;"></div>
+				<img id="confrimImg" style="opacity: 0.0;" src="img/confrim_bg.png" usemap="#test">
+				<map name="test">
+					<area shape="rect" coords="0,180,293,264" onclick="clickConfrim();" />
+					<area shape="rect" coords="293,180,590,264" onclick="clickCancel();" />
+				</map>
+				<div style="position: absolute;top: 180px;z-index: -1;">
+					<div class="confrim-btn"></div>
+					<div class="cancel-btn"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.min.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var onBtnFlag = false,
+			focusPos = mediaPos = 0,
+			mediaList = new Array();
+		var topValue = 0, // 上次滚动条到顶部的距离  
+			interval = null; // 定时器
+		var mediaScrollTop = 0;
+		var newMeidaPos = 0;
+		var cancelFavoriteBoxObj = new BoxObject(".confrimBox", 0, function() {
+			$(".focus").hide(), focusPos = 0;
+			$(".confrimText").text("确定取消该收藏？");
+			setConfirmBoxFocus();
+		}, function() {
+			if (focusPos == 0) {
+				FavoriteUtil.remove(mediaList[mediaPos].id);
+				mediaList = FavoriteUtil.getList();
+				if (mediaList.length > 0) {
+					if (mediaPos > mediaList.length - 1) {
+						mediaPos = mediaList.length - 1;
+						if (mediaPos < 6) focusPos = mediaPos;
+						else focusPos = 6 + mediaPos % 6;
+					} else {
+						var top = parseInt($(".mediaBox").position().top);
+						focusPos = mediaPos + Math.floor(top / 270);
+					}
+					$(".mediaBox").empty();
+					$.each(mediaList, function(i) {
+						$(".mediaBox").append(mediaHtml(i, this));
+					});
+					setMediaFocus();
+				} else $(".mediaBox").empty();
+			} else {
+				var top = parseInt($(".mediaBox").position().top);
+				focusPos = mediaPos + Math.floor(top / 270);
+				setMediaFocus();
+			}
+		});
+
+		function eventHandle(keyObj) {
+//			if (mediaList.length == 0) return;
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (cancelFavoriteBoxObj.showFlag) {
+						if (focusPos == 1) focusPos = 0;
+						setConfirmBoxFocus();
+					} else if (!onBtnFlag) {
+						if (mediaPos > 0) mediaPos--;
+						else break;
+						if (focusPos > 0) focusPos--;
+						else focusPos = 5;
+						setMediaFocus();
+					}
+					break;
+				case "DPAD_UP":
+					if (!onBtnFlag && !cancelFavoriteBoxObj.showFlag) {
+						if (mediaPos > 5) mediaPos -= 6;
+						else {
+							setBtnFocus();
+							break;
+						}
+						if (focusPos > 5) focusPos -= 6;
+						setMediaFocus();
+						break;
+					}
+				case "DPAD_RIGHT":
+					if (cancelFavoriteBoxObj.showFlag) {
+						if (focusPos == 0) focusPos = 1;
+						setConfirmBoxFocus();
+					} else if (!onBtnFlag) {
+						if (mediaPos < mediaList.length - 1) mediaPos++;
+						else break;
+						if (focusPos == 11) focusPos = 6;
+						else focusPos++;
+						setMediaFocus();
+					}
+					break;
+				case "DPAD_DOWN":
+					if (onBtnFlag && mediaList.length > 0) {
+						setMediaFocus();
+						break;
+					} else if (!cancelFavoriteBoxObj.showFlag) {
+						if (mediaPos < Math.floor((mediaList.length - 1) / 6) * 6) {
+							mediaPos += 6;
+							if (mediaPos > mediaList.length - 1) mediaPos = mediaList.length - 1;
+						} else break;
+						if (focusPos < 6 && focusPos % 6 == mediaPos % 6) focusPos += 6;
+						else focusPos = mediaPos % 6 + 6;
+						setMediaFocus();
+					}
+					break;
+				case "NAV_INFO":
+					if (!onBtnFlag) cancelFavoriteBoxObj.show();
+					break;
+				case "DPAD_OK":
+					if (onBtnFlag) {
+						FavoriteUtil.clear();
+						$(".mediaBox").empty();
+						mediaList.length = 0;
+						DialogUtil.showToast("清除记录成功");
+					} else if (cancelFavoriteBoxObj.showFlag) {
+						cancelFavoriteBoxObj.hide();
+					} else {
+						sessionStorage.setItem("favoriteInitObj", JSON.stringify({
+							focusPos: focusPos,
+							mediaPos: mediaPos
+						}));
+						window.location.href = "detail.html?cid=" + mediaList[mediaPos].columnId + "&mid=" + mediaList[mediaPos].id;
+					}
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			mediaList = FavoriteUtil.getList();
+			if (mediaList.length > 0) {
+				DialogUtil.showLoading("加载中...");
+				if (Boolean(sessionStorage.getItem("favoriteInitObj"))) {
+					var initObj = JSON.parse(sessionStorage.getItem("favoriteInitObj"));
+					focusPos = initObj.focusPos;
+					mediaPos = initObj.mediaPos;
+					if (mediaPos > mediaList.length - 1) {
+						mediaPos = mediaList.length - 1;
+						if (mediaPos < 6) focusPos = mediaPos;
+						else focusPos = 6 + mediaPos % 6;
+					}
+					sessionStorage.removeItem("favoriteInitObj");
+				}
+				$.each(mediaList, function(i) {
+					$(".mediaBox").append(mediaHtml(i, this));
+				});
+				setMediaFocus(1);
+				DialogUtil.hideLoading();
+//				DialogUtil.showToast("按[INFO]键取消收藏");
+			}
+		});
+		
+		function mouseOverMediaBtn(){
+			setBtnFocus();
+			$(".focus").removeAttr("onclick");
+			$(".focus").click(function (){
+				clearMedia();
+			});
+		}
+		
+		function mouseOverMedia(__mediaPos){
+			focusPos = __mediaPos;
+			mediaPos = __mediaPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 11) {
+				focusPos = (__mediaPos % 6 == 0) ? 6 : (__mediaPos % 6) + 6;
+			}
+			setMediaFocus();	
+		}
+
+		function clickMedia(__mediaPos) {
+			onBtnFlag = false;
+			focusPos = __mediaPos;
+			mediaPos = __mediaPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 11) {
+				focusPos = (__mediaPos % 6 == 0) ? 6 : (__mediaPos % 6) + 6;
+			}
+			setMediaFocus();
+			sessionStorage.setItem("favoriteInitObj", JSON.stringify({
+				focusPos: focusPos,
+				mediaPos: mediaPos
+			}));
+			window.location.href = "detail.html?cid=" + mediaList[mediaPos].columnId + "&mid=" + mediaList[mediaPos].id;
+		}
+
+		function scrollMedia(__this) {
+			$(".focus").hide();
+			mediaScrollTop = $(__this).scrollTop();
+			newMeidaPos = Math.ceil(mediaScrollTop / 270);
+			console.log(newMeidaPos);
+			if (interval == null) {
+				interval = setInterval("test()", 1000);
+			}
+			topValue = mediaScrollTop;
+		}
+
+		function test() {
+			if ($("#mediaScroll").scrollTop() == topValue) {
+				$(".focus").show();
+				$("#mediaScroll").scrollTop(270 * newMeidaPos);
+				if (mediaPos >= 6 * newMeidaPos && mediaPos < 6 * (newMeidaPos + 2) && onBtnFlag == false) {
+					if ((mediaScrollTop) % 270 != 0) {
+						extraScrollTop = 270 - ((mediaScrollTop) % 270);
+					} else {
+						extraScrollTop = 0;
+					}
+					$(".focus").show();
+					$(".focus").css({
+						top: 124 + Math.floor(((6 * (newMeidaPos + 1)) > mediaPos) ? 0 : 1) * 270 + extraScrollTop,
+						left: 58 + focusPos % 6 * 200,
+						width: 160,
+						height: 230
+					});
+				} else {
+					$(".focus").hide();
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function clearMedia() {
+			if (mediaList.length != 0) {
+				onBtnFlag = true;
+				FavoriteUtil.clear();
+				$(".mediaBox").empty();
+				setBtnFocus();
+				mediaList.length = 0;
+				DialogUtil.showToast("清除记录成功");
+			}
+		}
+
+		function clickConfrim() {
+			focusPos = 0;
+			$(".cancel-btn").css("visibility", "hidden");
+			$(".confrim-btn").css("visibility", "visible");
+			if (cancelFavoriteBoxObj.showFlag) {
+				cancelFavoriteBoxObj.hide();
+			}
+		}
+
+		function clickCancel() {
+			focusPos = 1;
+			$(".confrim-btn").css("visibility", "hidden");
+			$(".cancel-btn").css("visibility", "visible");
+			if (cancelFavoriteBoxObj.showFlag) {
+				cancelFavoriteBoxObj.hide();
+			}
+		}
+		
+		function clearMarquee() {
+			$(".vodTitle marquee").each(function() {
+				var $this = $(this);
+				$this.parent().html($this.html());
+			});
+		}
+
+		function addMarquee() {
+			var title = mediaList[mediaPos].title;
+			if (ToolsUtil.getStringLength(title) > 18) $($(".vodTitle")[mediaPos]).html('<marquee width="162" height="24" align="absmiddle" behavior="scroll">' + title + "</marquee>");
+		}
+
+		function mediaHtml(i, mediaObj) {
+			var html = '<div class="vod" onclick="clickMedia(' + i + ')" onmouseover="mouseOverMedia('+i+')"><div class="vodImg">';
+			html += '<img width="160" height="230" src="' + mediaObj.thumbnail + '"></div>';
+			html += '<div class="vodTitle">' + mediaObj.title + "</div></div>";
+			return html;
+		}
+
+		function setBtnFocus() {
+			onBtnFlag = true;
+			clearMarquee();
+			$(".focus").css({
+				top: 29,
+				left: 1086,
+				width: 129,
+				height: 53
+			});
+		}
+
+		function setMediaFocus(i) {
+			onBtnFlag = false;
+			clearMarquee();
+			if (i == undefined) {
+				if (mediaPos > focusPos) {
+					$("#mediaScroll").scrollTop(270 * (mediaPos - focusPos));
+				} else {
+					$("#mediaScroll").scrollTop(270 * (focusPos - mediaPos));
+				}
+			}
+			if (mediaPos > 11 || focusPos < 11) {
+				$("#mediaScroll").scrollTop(270 * Math.floor((mediaPos - focusPos) / 6));
+			}
+			if (i == undefined) {
+				mediaScrollTop = $("#mediaScroll").scrollTop();
+			}
+			if ((mediaScrollTop) % 270 != 0) {
+				extraScrollTop = 270 - ((mediaScrollTop) % 270);
+			} else {
+				extraScrollTop = 0;
+			}
+			$(".focus").show();
+			$(".focus").css({
+				top: 124 + Math.floor(focusPos / 6) * 270 + extraScrollTop,
+				left: 58 + focusPos % 6 * 200,
+				width: 160,
+				height: 230
+			});
+			addMarquee();
+		}
+
+		function setConfirmBoxFocus() {
+			if (focusPos == 0) {
+				$(".cancel-btn").css("visibility", "hidden");
+				$(".confrim-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".confrim-btn").css("visibility", "hidden");
+				$(".cancel-btn").css("visibility", "visible");
+			}
+		}
+	</script>
+
+</html>

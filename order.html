@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VIZIO</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="page-view-size" content="1280*720">
+    <link href="css/comm.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-size: 22px
+        }
+
+        .contentBox {
+            width: 1020px;
+            height: auto;
+            margin: 10px 130px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, .5)
+        }
+
+        .box {
+            display: none;
+            width: 980px;
+            padding: 20px
+        }
+
+        .buttons {
+            width: 100%;
+            padding-top: 20px;
+            text-align: center;
+            border-top: 1px solid #bfbfbf
+        }
+
+        .line {
+            width: 100%;
+            margin-bottom: 20px
+        }
+
+        .productBox {
+            padding: 10px;
+            max-height: 450px;
+            overflow: hidden
+        }
+
+        .product {
+            width: 100%;
+            text-align: left;
+            color: #f4f4f4;
+            border: 2px solid rgba(0, 0, 0, 0)
+        }
+
+        .product_onfocus {
+            width: 280px;
+            height: 260px;
+            /*background: url(img/order.png);
+            background-size: 258px 250px;*/
+            margin-right: 30px;
+            font-size: 16px;
+            font-weight: bolder;
+            border: 3px solid rgba(240, 253, 0, 1);
+            box-shadow: rgba(240, 253, 0, 0.8) 0px 0px 8px 3px;
+        }
+        .product_1_onfocus {
+            width: 200px;
+            height: 260px;
+            /*background: url(img/order.png);
+            background-size: 200px 200px;*/
+            margin-right: 30px;
+            font-size: 16px;
+            font-weight: bolder;
+            border: 3px solid rgba(240, 253, 0, 1);
+            box-shadow: rgba(240, 253, 0, 0.8) 0px 0px 8px 3px;
+        }
+
+        .product_onbulr {
+            width: 280px;
+            height: 260px;
+            /*background: url(img/order.png);
+            background-size: 265px 250px;*/
+            margin-right: 30px;
+            font-size: 16px;
+            font-weight: bolder;
+            border: 3px solid;
+        }
+        .product_1_onbulr {
+            width: 200px;
+            height: 260px;
+            /*background: url(img/order.png);
+            background-size: 200px 200px;*/
+            margin-right: 30px;
+            font-size: 16px;
+            font-weight: bolder;
+            border: 3px solid;
+        }
+
+        .product_onfocus span {
+            position: absolute;
+            bottom: 10px;
+            margin-left: 0px;
+            text-align:center;
+            width: inherit;
+        }
+
+        .product_onbulr span {
+            position: absolute;
+            bottom: 10px;
+            margin-left: 0px;
+            text-align:center;
+            width: inherit;
+        }
+        .product_1_onfocus span {
+            position: absolute;
+            bottom: 10px;
+            margin-left: 0px;
+            text-align:center;
+            width: inherit;
+        }
+
+        .product_1_onbulr span {
+            position: absolute;
+            bottom: 10px;
+            margin-left: 0px;
+            text-align:center;
+            width: inherit;
+        }
+    </style>
+</head>
+
+<body>
+<div class="columnTitleBox">
+    <div class="columnTitle">
+        订购
+        <span style="font-size: 30PX;">Payment</span>
+    </div>
+</div>
+<div class="contentBox">
+    <div class="box contentBox_1">
+        <div style="width:100%;padding:5px 0;border-bottom:1px solid #bfbfbf">请选择产品包,按确认键选定</div>
+        <div class="productBox" style="height: 350px;margin-top: 30px;">
+            <div id="product" style="float: none; margin-bottom: 5px;">
+            </div>
+            <!--<div class="buttons" style="margin-top: 30px;width:975px;">
+                <div id="check" class="ok-no" style="margin: 5px;border: 1px groove rgba(240, 253, 0, 1);" onclick="clickBtn(2)" onmouseover="mouseOverCheck(1)" onmouseout="check_onblur()"></div>
+                <div id="check_button">自动续订</div>
+            </div>-->
+        </div>
+        <div style="width: 100%;text-align: center;">
+            <div style="float: none;margin: 0 auto;">
+                <div style="float: none; margin-bottom: 5px;padding: 10px;">
+                    <label id="YES" style="margin: 30px;font-size: 1.5em;border: 3px solid;padding: 8px 50px;" onclick="clickBtn()" onmouseover="mouseOverLabel(1,1)" onmouseout="lable_onblur()">确认</label>
+                    <label id="NO" style="margin: 30px;font-size: 1.5em;border: 3px solid;padding: 8px 50px;" onclick="clickBtn()" onmouseover="mouseOverLabel(1,0)" onmouseout="lable_onblur()">取消</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/jquery.qrcode.min.js"></script>
+<script type="text/javascript" src="js/json2.min.js"></script>
+<script type="text/javascript" src="js/comm.js"></script>
+<script type="text/javascript" src="js/qrcode.js"></script>
+<script type="text/javascript" src="js/config.min.js"></script>
+<script type="text/javascript" src="js/data.js"></script>
+<script type="text/javascript" src="js/keyevent.js"></script>
+<script type="text/javascript">
+var sid;
+var flag = 0 ;
+var productList = new Array(),
+        mediaList = new Array(),
+        sidList = new Array(),
+        getMediaDetailCount = 0;
+var reSetLastSubscribLength=true;
+var lastSubscribeLength=0;
+var subscribeSid=null;
+var getQcodeUrlCount=0;
+var subscribeType="paypal";
+var subscribeQrcodeUrl=null;
+function onMessage(e) {
+    OISUtil.onMessage(e);
+    EPGSUtil.onMessage(e);
+    var data = e.data;
+    var result = data.result;
+    switch (data.event) {
+        case "comm_bankAccountInfo":
+            var p_time = ((new Date("2016/9/01 00:00:00")).getTime())/1000;
+            if(CurrentServerTime<p_time){
+                break;
+            }else{
+                DialogUtil.showAlert("提示", "您的APP版本太低请先升级！");
+                break;
+            }
+            if (result.status == 200) { //已经绑定信用卡判断信用卡是否可用
+                var bankAccount = result.data;
+                if (bankAccount.status == 2) {
+                    DialogUtil.showAlert("提示", "对不起，你的信用卡已经不可用，请重新绑定新的信用卡再订购！");
+                    window.setTimeout(function() {
+                        window.location = "bind.html";
+                    }, 3000);
+                }else {
+                    OISUtil.subscribe(sidList[checkOpt],0,"comm_subscribe");
+                }
+            } else if (result.status == 400) {
+                DialogUtil.showAlert("提示", "非法请求  ");
+            } else if (result.status == 401) {
+                DialogUtil.showAlert("提示", "非法用户");
+            } else if (result.status == 402) {
+                DialogUtil.showAlert("提示", "对不起，你还没有绑定信用卡，三秒后自动跳转到绑定页面");
+                window.setTimeout(function() {
+                    window.location = "bind.html";
+                }, 3000);
+            } else if (result.status == 403) {
+                DialogUtil.showAlert("提示", "无效token");
+            } else if (result.status == 404) {
+                DialogUtil.showAlert("提示", "IP列入黑名单");
+            }
+            break;
+        case "all_subscribeList":
+            var result = data.result;
+            if (result.status == 200) {
+                if (Boolean(result.data)) {
+                    var root = XMLUtil.loadXML(result.data);
+                    var recordNodes = root.getElementsByTagName("subscribelist");
+                    if(reSetLastSubscribLength){
+                        reSetLastSubscribLength=false;
+                        lastSubscribeLength=recordNodes.length;
+                    }
+                    if( recordNodes.length>lastSubscribeLength) {
+                        lastSubscribeLength=recordNodes.length;
+                            DialogUtil.hideSubscribeResult();
+                            inputPos = 4;
+                            $("#YES").css({
+                                "border": "3px solid",
+                                "box-shadow": "none"
+                            });
+                            $("#NO").css({
+                                "border": "3px solid",
+                                "box-shadow": "none"
+                            });
+                            DialogUtil.showSubscribeResult(false);
+                    }
+                }
+            }
+            break;
+       /* case "subscribeList":
+            var result = data.result;
+            if (result.status == 200) {
+                if (Boolean(result.data)) {
+                    var root = XMLUtil.loadXML(result.data);
+                    var recordNodes = root.getElementsByTagName("subscribelist");
+                    for (var i = 0; i < recordNodes.length; i++) {
+                        var serviceId = XMLUtil.getAttributeValue(recordNodes[i], "sid");
+                        for (var index in productList) {
+                            if (serviceId == productList[index].id) {
+                                productList[index].effective=true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            mediaList.length = productList.length;
+            $.each(productList, function() {
+                EPGSUtil.getMediaDetail(this.columnId, this.id, 0, 0, 0, "mediaDetail");
+            });
+            break;*/
+        case "product":
+            UserInfo.needRequestProductList=false;
+            ToolsUtil.saveCache("UserInfo", JSON.stringify(UserInfo));
+            var allProductList = data.result.list;
+            var country = UserInfo.country;
+            if(country.indexOf('AU')>-1){
+                productList=getProductList(allProductList,"AU");
+            }else if(country.indexOf('SG')>-1){
+                productList=getProductList(allProductList,"SG");
+            }else if(country.indexOf('MY')>-1){
+                productList=getProductList(allProductList,"MY");
+            }else if(country.indexOf('ID')>-1){
+                productList=getProductList(allProductList,"ID");
+            }else{
+                productList=getProductList(allProductList,"_default");
+            }
+            var ranklist=new Array();
+            for(var i=0;i<productList.length;i++){
+                if(ranklist.length==0){
+                    ranklist.push(productList[0]);
+                }else{
+                    for(var j=0;j<ranklist.length;j++){
+                        if(ranklist[j].price<productList[i].price){
+                            if(j<ranklist.length-1&&ranklist[j+1].price>productList[i].price){
+                                ranklist.splice(j+1,0,productList[i]);
+                                break;
+                            }else if(j==ranklist.length-1){
+                                ranklist.splice(j+1,0,productList[i]);
+                                break;
+                            }
+                        }else{
+                            ranklist.splice(j,0,productList[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+            productList=ranklist;
+            mediaList.length = productList.length;
+            $.each(productList, function() {
+                EPGSUtil.getMediaDetail(this.columnId, this.id, 0, 0, 0, "mediaDetail");
+            });
+            break;
+        case "mediaDetail":
+            for (var i = 0; i < productList.length; i++) {
+                if (productList[i].id == data.result.id) {
+                    mediaList[i] = data.result;
+                    mediaList[i].effective=productList[i].effective;
+                    getMediaDetailCount++;
+                }
+            }
+            if (getMediaDetailCount == productList.length) {
+                $.each(mediaList, function(i) {
+                    sidList[i] = this.id;
+                    var pid = "product";
+                    pid += i;
+                    var html = "<div id='" + pid + "' class='product_onbulr' onmouseover='mouseOverProduct(0,"+i+",0)'></div>"; // + " 美元，有效期：" + this.duration / 24 + " 天）"
+                    if(productList.length>3){
+                        html = "<div id='" + pid + "' class='product_1_onbulr' onmouseover='mouseOverProduct(0,"+i+",0)'></div>"; // + " 美元，有效期：" + this.duration / 24 + " 天）"
+                    }
+                    //html += this.title + "（价格：" + (this.price / 20) + "元/周)</span>";
+                    $("#product").append(html);
+                    if(i==0){
+                        $("#product0").css({
+                            "border": "3px solid rgba(240, 253, 0, 1)",
+                            "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                        });
+                    }
+                    if(productList.length>3){
+                        var image_div="<img   src='"+"img/order.png"+"' style='width:200px;height:200px;position:absolute;'/>";
+                        if(this.image){
+                            image_div="<img   src='"+image+"' style='width:200px;height:200px;position:absolute;'/>";
+                        }
+                        $("#"+pid).append(image_div);
+                    }else{
+                        var image_div="<img   src='"+"img/order.png"+"' style='width:265px;height:250px;position:absolute;'/>";
+                        if(this.image){
+                            image_div="<img   src='"+image+"' style='width:265px;height:250px;position:absolute;'/>";
+                        }
+                        $("#"+pid).append(image_div);
+
+                    }
+                    // 马来西亚的货币符号：M.＄；新加坡的货币符号：S.＄；印度尼西亚的货币符号：Rps.；澳大利亚的货币符号：A$；
+                    var coinSign="$";
+                    var country = UserInfo.country;
+                    if(country.indexOf('AU')>-1){
+                        coinSign='A$';
+                    }else if(country.indexOf('SG')>-1){
+                        coinSign='S.$';
+                    }else if(country.indexOf('MY')>-1){
+                        coinSign='M.$';
+                    }else if(country.indexOf('ID')>-1){
+                        coinSign='IDR';
+                    }
+                    var price_div="<span >"+this.title+"（"+coinSign+" : "+(this.price/100)+")"+"</span>";
+                    /*if(this.duration/24/30==3){
+                        price_div="<span>"+"包季套餐（"+(this.price)+"$/季)"+"</span>";
+                    }else if(this.duration/24/30==6){
+                        price_div="<span>"+"半年套餐（"+(this.price)+"$/半年)"+"</span>";
+                    }else if(this.duration/24/30==12){
+                        price_div="<span>"+this.title+"（"+(this.price)+"$/年)"+"</span>";
+                    }*/
+                    $("#"+pid).append(price_div);
+                    /*else if (i == 1) {
+                     var html = "<div id='" + pid + "' class='product_onbulr' onmouseover='mouseOverProduct(0,1,0)'><span>"; // + " 美元，有效期：" + this.duration / 24 + " 天）"
+                     html += this.title + "（价格：" + (this.price / 3000) + "元/月)</span></div>";
+                     $("#product").append(html);
+                     if((sidList.length-i) == 1){
+                     $("#product").append("<div id='product2' class='product_onbulr' onmouseover='mouseOverProduct(0,2,0)'><span>所有产品（价格："+(this.price/100)+"元/年)</span></div>");
+                     }
+                     }*/
+                    flag = 1;
+                });
+            }
+            break;
+        /*case "comm_subscribe":
+            result = data.result;
+            if (result.status == 200) {
+                paymentLink = result.location;
+                qrcodeBoxObj.show();
+            } else if (result.status == 400) {
+                DialogUtil.showAlert("订购错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+            } else if (result.status == 401) {
+                DialogUtil.showAlert("订购错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+            } else if (result.status == 402) {
+                DialogUtil.showAlert("订购错误", "无效serviceId，请联系客服<br/>邮箱：channelchina@qcast.cn");
+            } else if (result.status == 403) {
+                DialogUtil.showAlert("订购错误", "无效token，请联系客服<br/>邮箱：channelchina@qcast.cn");
+            } else if (result.status == 409) {
+                DialogUtil.showAlert("温馨提示", "您已订购该产品包且在有效期内");
+            } else if (result.status == 500) {
+                DialogUtil.showAlert("订购错误", "服务器内部错误，请联系客服<br/>邮箱：channelchina@qcast.cn");
+            }
+            break;*/
+    }
+}
+function getProductList(productlist,country){
+    var select_product_list=[];
+    for(var i=0;i<productlist.length;i++){
+        if(productlist[i].id.indexOf(country)>-1){
+            select_product_list.push(productlist[i]);
+        }
+        if(select_product_list.length>=4){
+            break;
+        }
+    }
+    return select_product_list;
+}
+$(function() {
+    $(".contentBox_1").show();
+    if(typeof jContentShellJBridge!='undefined'&&typeof  jContentShellJBridge.disableMouseMode!='undefined')
+        jContentShellJBridge.disableMouseMode(true);
+
+    if(document.grantAccessRight != undefined)
+        document.grantAccessRight();
+    if(typeof qcastTop != "undefined"&& typeof qcastTop.iframe_page_cast_ != "undefined"&& typeof qcastTop.iframe_page_cast_.fakeReferrerUrl != "undefined"){
+        qcastTop.iframe_page_cast_.fakeReferrerUrl = 'SET_TO_EMPTY';
+    }
+    UserInfo.needRequestProductList=true;
+    if(UserInfo.hasGotLocation){
+        EPGSUtil.getMediaByColumnId(99, 0, 0, 100, "product");
+    }else{
+        DialogUtil.showAlert("提示","正在获取订购包...");
+        var requestAjax= new Ajax();
+        requestAjax.getHtmlContent('http://lg.live.qcast.cn/manage/getAddress.php?','','POST','ip=myip',getUserIPInfoModel_qqzeng);
+    }
+    ToolsUtil.saveCache("UserInfo", JSON.stringify(UserInfo));
+
+});
+function subscribe(){
+
+        inputPos=3;
+        payhander=0;
+        getQcodeUrlCount=0;
+        $("#NO").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+        $("#YES").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+        showSubscribeWay();
+        //DialogUtil.showSubscribeResult(true);
+}
+function createQRCodeCanvas(qrcode_str, qrcode_width, qrcode_height) {
+    var options = {
+        render		: "canvas",
+        width		: qrcode_width,
+        height		: qrcode_height,
+        typeNumber	: -1,
+        correctLevel	: QRErrorCorrectLevel.Q,
+        qrcode_url		: qrcode_str,
+        background      : "#ffffff",
+        foreground      : "#000000"
+    };
+
+    // create the qrcode itself
+    var qrcode	= new QRCode(options.typeNumber, options.correctLevel);
+    qrcode.addData(options.qrcode_url);
+    qrcode.make();
+
+    // create canvas element
+    var canvas	= document.createElement('canvas');
+    canvas.width	= options.width;
+    canvas.height	= options.height;
+    var ctx		= canvas.getContext('2d');
+
+    // compute tileW/tileH based on options.width/options.height
+    var tileW	= options.width  / (qrcode.getModuleCount() + 4);
+    var tileH	= options.height / (qrcode.getModuleCount() + 4);
+
+    // draw in the canvas
+    for( var row = 0; row < qrcode.getModuleCount() + 4; row++ ){
+        for( var col = 0; col < qrcode.getModuleCount() + 4; col++ ){
+            if(row < 2 || row > (qrcode.getModuleCount() + 1) || col < 2 || col > (qrcode.getModuleCount() + 1)) {
+                ctx.fillStyle = options.background;
+            }else{
+                ctx.fillStyle = qrcode.isDark(row - 2, col - 2) ? options.foreground : options.background;
+            }
+            var w = (Math.ceil((col+1)*tileW) - Math.floor(col*tileW));
+            var h = (Math.ceil((row+1)*tileW) - Math.floor(row*tileW));
+            ctx.fillRect(Math.round(col*tileW),Math.round(row*tileH), w, h);
+        }
+    }
+    // return just built canvas
+    return canvas;
+}
+var createQrcodeElement=function(){
+
+    if(typeof createQRCodeCanvas != "undefined"){
+        var QRCode=null;
+        QRCode = createQRCodeCanvas(subscribeQrcodeUrl,252,252);
+        QRCode.className="subscribeQrcode";
+        QRCode.id='QRCode';
+        var flag=document.createElement('img');
+        flag.style.position='absolute';
+        if(subscribeWay==0){
+            flag.src='./img/paypal_s.png';
+        }else{
+            flag.src='./img/wehat_s.png';
+        }
+        flag.width='56';
+        flag.height='56';
+        flag.style.top='178px';
+        flag.style.left='458px';
+
+        if( $(".subscribeContainer")){
+            $(".subscribeContainer")[0].appendChild(QRCode);
+            $(".subscribeContainer")[0].appendChild(flag);
+
+        }
+    }
+};
+var getQrcodeUrl = function(){
+    var requestQrcodeUrlAjax= new Ajax();
+    var exchangeRate='USD';
+    var country=UserInfo.country;
+    if(country.indexOf('AU')>-1){
+        exchangeRate="AUD";
+    }else if(country.indexOf('SG')>-1){
+        exchangeRate="SGD";
+    }else if(country.indexOf('MY')>-1){
+        exchangeRate="MYR";
+    }else if(country.indexOf('ID')>-1){
+        exchangeRate='IDR';
+    }
+    var info=productList[checkOpt];
+    var price=(info.price/100);
+    var desc=encodeURI(info.title);
+    subscribeSid=info.id;
+    var requestUrl='http://lg.pay.qcast.cn/pay/process.php?'+"type="+subscribeType+"&currency="+exchangeRate+
+            '&user='+UserInfo.user+'&sid='+subscribeSid+'&price='+price+'&desc='+desc+'&channel=LG';
+    requestQrcodeUrlAjax.getHtmlContent(requestUrl,'','GET','',qrcodeUrlCallBack);
+
+};
+var getQrcodeUrlAgain=function(){
+    if(getQcodeUrlCount<3){
+        getQrcodeUrl();
+        getQcodeUrlCount++;
+    }else{
+        subscribeSid=null;
+        DialogUtil.hideSubscribeResult();
+        inputPos = 0;
+        $("#YES").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+        $("#NO").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+        DialogUtil.showAlert('提示','生成订单失败，请重新下订单');
+    }
+};
+var qrcodeUrlCallBack=function(result){
+    if(!result){
+        getQrcodeUrlAgain();
+        return;
+    }
+    if(!result.data){
+        getQrcodeUrlAgain();
+        return;
+    }
+    try{
+        var data=JSON.parse(result.data);
+        if(data.status==0){
+            subscribeQrcodeUrl=data.msg;
+            createQrcodeElement();
+        }else if(data.status==-1){
+            getQrcodeUrlAgain();
+            return;
+        }
+    }catch(e){
+    }
+
+};
+var showSubscribeWay=function(){
+        var payment=document.createElement('div');
+        payment.className="payment";
+
+        var subscribeContainer=document.createElement('div');
+        subscribeContainer.className="subscribeContainer";
+        document.body.appendChild(payment);
+        payment.appendChild(subscribeContainer);
+        var title='<div style="height:54px;width:730px;text-align: center;font-size: 32px;color:#000000;line-height: 54px">Choose the method of payment</div>';
+        $(".subscribeContainer").append(title);
+        var paypalImage='<div class="payPalSubscribeImageBorder" onmouseover="mouseOverSubscribeWay(2,0)" onclick="clickBtn()" ><div class="payPalSubscribeImage"></div> </div>';
+        var wechatImage='<div class="wechatSubscribeImageBorder" onmouseover="mouseOverSubscribeWay(2,1)" onclick="clickBtn()" ><div class="wechatSubscribeImage"></div></div>';
+        var cancel='<div class="subcribeClose subcribeText"  onmouseover="mouseOverSubscribeWay(3,0)" onclick="clickBtn()">Cancel</div>';
+        $(".subscribeContainer").append(paypalImage);
+        $(".subscribeContainer").append(wechatImage);
+        $(".subscribeContainer").append(cancel);
+        $('.payPalSubscribeImageBorder')[0].style.background="url(./img/subscribeway_focus.png)";
+    }
+var onEPGSLoad=function(){};
+function clickBtn(__checkOpt){
+    if ( flag ==1 && inputPos == 1 ) {
+        if(check == 1){
+            inputPos=2;
+            subscribeWay = 0;
+            showSubscribeWay();
+        }else if (  check == 0) {
+            window.history.go(-1);
+        }
+    }else if(flag ==1 && inputPos == 2){
+        //show qrcode
+        if(subscribeWay==0){
+            subscribeType='paypal';
+        }else{
+            subscribeType='wechat';
+        }
+        inputPos = 4;
+        getQrcodeUrl();
+    }else if(flag ==1 && inputPos == 3){
+        inputPos=1;
+        check = 1;
+        DialogUtil.hideSubscribeResult();
+        $("#YES").css({
+            "border": "3px solid rgba(240, 253, 0, 1)",
+            "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+        });
+    }else if(flag ==1 && inputPos == 4){
+        if(true){
+            inputPos=2;
+            subscribeWay = 0;
+            DialogUtil.hideSubscribeResult();
+            showSubscribeWay();
+        }else{
+            inputPos=1;
+            check = 1;
+            DialogUtil.hideSubscribeResult();
+            $("#YES").css({
+                "border": "3px solid rgba(240, 253, 0, 1)",
+                "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+            });
+        }
+
+    }
+}
+function product_focus(__checkOpt){
+    var product_id = "#product";
+    var product_of = product_id + __checkOpt;
+    $(product_of).css({
+        "border": "3px solid rgba(240, 253, 0, 1)",
+        "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+    });
+}
+function product_onblur(__checkOpt){
+    var product_id = "#product";
+    var product_ob = product_id + __checkOpt;
+    $(product_ob).css({
+        "border": "3px solid",
+        "box-shadow": "none"
+    });
+}
+
+function check_onblur(){
+    $("#check_button").css({
+        "border": "3px solid",
+        "box-shadow": "none"
+    });
+}
+
+function lable_onblur(){
+    $("#NO").css({
+        "border": "3px solid",
+        "box-shadow": "none"
+    });
+    $("#YES").css({
+        "border": "3px solid",
+        "box-shadow": "none"
+    });
+}
+
+function mouseOverLabel(__inputPos,__check){
+    inputPos = __inputPos;
+    check = __check;
+    if(check == 1){
+        $("#YES").css({
+            "border": "3px solid rgba(240, 253, 0, 1)",
+            "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+        });
+        $("#NO").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+    }else {
+        $("#NO").css({
+            "border": "3px solid rgba(240, 253, 0, 1)",
+            "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+        });
+        $("#YES").css({
+            "border": "3px solid",
+            "box-shadow": "none"
+        });
+    }
+}
+
+function mouseOverCheck(__inputPos){
+    inputPos = __inputPos;
+    $("#check_button").css({
+        "border": "3px solid rgba(240, 253, 0, 1)",
+        "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+    });
+}
+
+function mouseOverProduct(__inputPos,__checkOpt,__check){
+    inputPos = __inputPos;
+    checkOpt = __checkOpt;
+    check = __check;
+    if(inputPos == 0 ){
+        /*if(checkOpt == 0){
+            product_focus(checkOpt);
+            product_onblur(checkOpt+1);
+            product_onblur(checkOpt+2);
+        }else if(checkOpt == 1){
+            product_focus(checkOpt);
+            product_onblur(checkOpt+1);
+            product_onblur(checkOpt-1);
+        }else{
+            product_focus(checkOpt);
+            product_onblur(checkOpt-2);
+            product_onblur(checkOpt-1);
+        }*/
+        product_focus(checkOpt);
+        for(var i= 0;i<mediaList.length;i++){
+            if(i!=checkOpt){
+                product_onblur(i);
+            }
+        }
+
+    }
+}
+function mouseOverSubscribeWay(__inputPos,way){
+    inputPos=__inputPos;
+    subscribeWay=way;
+    if(inputPos==2){
+        if(way==0){
+            $('.payPalSubscribeImageBorder')[0].style.background="url(./img/subscribeway_focus.png)";
+            $('.wechatSubscribeImageBorder')[0].style.background='';
+            $('.subcribeClose')[0].style.background='url(./img/payment_normal.png)';
+        }else{
+            $('.payPalSubscribeImageBorder')[0].style.background='';
+            $('.wechatSubscribeImageBorder')[0].style.background='url(./img/subscribeway_focus.png)';
+            $('.subcribeClose')[0].style.background='url(./img/payment_normal.png)';
+        }
+    }else if(inputPos==3){
+        $('.payPalSubscribeImageBorder')[0].style.background='';
+        $('.wechatSubscribeImageBorder')[0].style.background='';
+        $('.subcribeClose')[0].style.background='url(./img/payment_focus.png)';
+    }
+}
+function mouseOverPayment(__inputPos,_payhander){
+    inputPos = __inputPos;
+    payhander = _payhander;
+    if(inputPos==3){
+        if(flag ==1 && inputPos == 3&& payhander == 0){
+            if($('.subcribeCancel').length>0){
+                $('.subcribeCancel')[0].style.background='url(./img/payment_normal.png)';
+            }
+            if($('.subcribeBack').length>0){
+                $('.subcribeBack')[0].style.background='url(./img/payment_focus.png)'
+            }
+        }else if(flag ==1 && inputPos == 3&& payhander == 1){
+            if($('.subcribeCancel').length>0){
+                $('.subcribeCancel')[0].style.background='url(./img/payment_focus.png)'
+            }
+            if($('.subcribeBack').length>0){
+                $('.subcribeBack')[0].style.background='url(./img/payment_normal.png)'
+            }
+
+        }
+    }
+}
+var inputPos = 0,
+        checkOpt = 0,
+        check = 1,
+        payhander= 0,
+        renew = 0;
+
+function eventHandle(keyObj) {
+    switch (keyObj.str) {
+        case "DPAD_LEFT":
+            if ( flag ==1 && inputPos == 0 && (0<checkOpt )) {
+                product_onblur(checkOpt);
+                checkOpt = checkOpt -1 ;
+                product_focus(checkOpt);
+            }
+            else if ( flag ==1 && inputPos == 1 && check == 0) {
+                check = 1;
+                $("#YES").css({
+                    "border": "3px solid rgba(240, 253, 0, 1)",
+                    "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                });
+                $("#NO").css({
+                    "border": "3px solid",
+                    "box-shadow": "none"
+                });
+
+            }else if(flag ==1 && inputPos == 2&& subscribeWay == 1){
+                mouseOverSubscribeWay(inputPos,0);
+            }else if(flag ==1 && inputPos == 3&& payhander == 1){
+                payhander=0;
+                if( $('.subcribeCancel').length>0){
+                    $('.subcribeCancel')[0].style.background='url(./img/payment_normal.png)';
+                }
+                if( $('.subcribeBack').length>0){
+                    $('.subcribeBack')[0].style.background='url(./img/payment_focus.png)';
+                }
+            }
+
+            break;
+            return scrollFun(keyObj.event);
+        case "DPAD_UP":
+            if ( flag ==1 && inputPos == 1) {
+                inputPos --;
+                check = 1;
+                $("#YES").css({
+                    "border": "3px solid",
+                    "box-shadow": "none"
+                });
+                $("#NO").css({
+                    "border": "3px solid",
+                    "box-shadow": "none"
+                });
+            } else if ( flag ==1 && inputPos == 3) {
+                inputPos--;
+                mouseOverSubscribeWay(inputPos,subscribeWay);
+             }
+            break;
+            return scrollFun(keyObj.event);
+        case "DPAD_RIGHT":
+            if ( flag ==1 && inputPos == 0 && (checkOpt <productList.length-1)) {
+                product_onblur(checkOpt);
+                checkOpt = checkOpt + 1;
+                product_focus(checkOpt);
+            }
+            else if ( flag ==1 && inputPos == 1 && check == 1) {
+                check = 0;
+                $("#NO").css({
+                    "border": "3px solid rgba(240, 253, 0, 1)",
+                    "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                });
+                $("#YES").css({
+                    "border": "3px solid",
+                    "box-shadow": "none"
+                });
+            }else if(flag ==1 && inputPos == 2&&subscribeWay==0){
+                mouseOverSubscribeWay(inputPos,1);
+            }else if(flag ==1 && inputPos == 3&& payhander ==0){
+                payhander=1;
+                if( $('.subcribeCancel').length>0){
+                    $('.subcribeCancel')[0].style.background='url(./img/payment_focus.png)';
+                }
+                if( $('.subcribeBack').length>0){
+                    $('.subcribeBack')[0].style.background='url(./img/payment_normal.png)';
+                }
+            }
+            break;
+            return scrollFun(keyObj.event);
+        case "DPAD_DOWN":
+            if ( flag ==1 && inputPos == 0) {
+                inputPos += 1;
+                /*$("#check_button").css({
+                 "border": "3px solid rgba(240, 253, 0, 1)",
+                 "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                 });*/
+                $("#YES").css({
+                    "border": "3px solid rgba(240, 253, 0, 1)",
+                    "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                });
+            } else if ( flag ==1 && inputPos ==1) {
+                inputPos += 1;
+                check = 1;
+                $("#check_button").css({
+                "border": "3px solid",
+                "box-shadow": "none"
+                });
+                $("#YES").css({
+                "border": "3px solid rgba(240, 253, 0, 1)",
+                "box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+                });
+            }else if(flag ==1 && inputPos ==2){
+                inputPos=3;
+                mouseOverSubscribeWay(3,subscribeWay);
+            }
+            break;
+            return scrollFun(keyObj.event);
+        case "DPAD_OK":
+            clickBtn();
+            break;
+            return scrollFun(keyObj.event);
+    }
+}
+</script>
+
+</html>

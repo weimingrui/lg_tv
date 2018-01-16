@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style>
+			body {
+				font-size: 22px
+			}
+			
+			.contentBox {
+				width: 1020px;
+				height: auto;
+				margin: 10px 130px;
+				border-radius: 6px;
+				background: rgba(0, 0, 0, .5)
+			}
+			
+			.box {
+				display: block;
+				width: 980px;
+				padding: 20px
+			}
+			
+			.buttons {
+				width: 100%;
+				padding-top: 20px;
+				text-align: center;
+				border-top: 1px solid #bfbfbf
+			}
+			
+			.line {
+				width: 100%;
+				margin-bottom: 20px
+			}
+		</style>
+	</head>
+
+	<body>
+		<div style="width: 100%;">
+			<div style="width:100%;">
+				<div class="header">
+					<div class="step">
+						第三步：服务条款
+					</div>
+					<div style="font-size: 1.3em;">
+						<div style="color: #F0FD00;">对不起,您还不是我们的用户.</div>请先阅读并同意服务条款
+					</div>
+				</div>
+				<div class="logo"><img src="img/logo.png" /></div>
+			</div>
+		</div>
+		<div class="contentBox">
+			<div class="box contentBox_0">
+				<div class="line" style="padding:5px 0;border-bottom:1px solid #bfbfbf;text-align:center">“朝歌视界”服务条款</div>
+				<div class="line" style="font-size:18px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;“朝歌视界”是朝歌数码面向海外华人推出的互联网电视应用，包含丰富的电视直播和视频点播，请在确认付费前仔细阅读下面的条款：</div>
+				<div class="line" style="font-size:18px">
+					<ul>
+						<li>我们所提供的所有内容，均经过合法授权，支付方式和途径经过正规认证，安全可靠，可放心使用。</li>
+						<li>您保证，在您同意接受本协议并注册成为收费会员时，您已年满18周岁，具有完全民事行为能力。</li>
+						<li>本公司会不定期推出不同的服务产品包供您选择，请您在确认购买前仔细了解产品包特性，我们不提供退订服务。</li>
+						<li>我们强烈建议您在付费后输入您的电话号码或email等资料，作为您的付费会员凭据，此凭据可以更好地保障您的付费权益。</li>
+						<li>如您不能提供上述信息，在您付费后，仍可以正常收看节目，但在您更换播放终端或系统发生意外的情况下，可能丢失付费信息，您将不得不再次支付费用。</li>
+						<li>我们尊重并保护您的个人隐私，您所提供的资料非经您亲自许可，或根据相关法律、法规的强制性规定，我们不会泄露给任何第三方。</li>
+						<li>请您充分阅读、理解本协议之全部内容，一旦您使用本服务，即表示您同意遵循本协议之所有约定。</li>
+					</ul>
+				</div>
+				<!--<div class="line" style="text-align:center">
+					手机号码：
+					<input name="mobile" type="text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E-mail:
+					<input name="email" type="text">
+				</div>-->
+				<div class="buttons">
+					<div id="check" class="ok-no" style="margin: 10px;border: 1px groove rgba(240, 253, 0, 1);"></div>
+					<div class="button">我已阅读并同意全部服务条款</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script>
+		var focusPos = 0;
+
+		function eventHandle(keyObj) {
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (focusPos != 0) {
+						focusPos = focusPos - 1;
+					}
+					$(".button").css("border", "2px solid #d2d2d2");
+					$("#check").css("border", "1px groove rgba(240, 253, 0, 1)");
+					return scrollFun(keyObj.event);
+					break;
+				case "DPAD_RIGHT":
+					if (focusPos < 1) {
+						focusPos = focusPos + 1;
+					}
+					$(".button").css("border", "2px solid rgba(240, 253, 0, 1)");
+					$("#check").css("border", "1px groove");
+					return scrollFun(keyObj.event);
+					break;
+				case "DPAD_UP":
+					if (focusPos != 0) {
+						focusPos = focusPos - 1;
+					}
+					$(".button").css("border", "2px solid #d2d2d2");
+					$("#check").css("border", "1px groove rgba(240, 253, 0, 1)");
+					return scrollFun(keyObj.event);
+					break;
+				case "DPAD_DOWN":
+					if (focusPos < 1) {
+						focusPos = focusPos + 1;
+					}
+					$(".button").css("border", "2px solid rgba(240, 253, 0, 1)");
+					$("#check").css("border", "1px groove");
+					return scrollFun(keyObj.event);
+					break;
+				case "DPAD_OK":
+					readAndAgree();
+					break;
+				case "NAV_BACK":
+					//window.location.href = "bind.html";
+					return scrollFun(keyObj.event);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+
+		function onMessage(e) {
+			var data = e.data;
+			var result = data.result;
+			if (Boolean(data)) {
+				var result = data.result;
+				switch (data.event) {
+					case "comm_enableUser":
+						if (result.status == 200) {
+							DialogUtil.hideLoading();
+							window.location.href = "order.html";
+						}
+						if (result.status == 400) {
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						if (result.status == 401) {
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						if (result.status == 402) {
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "已经激活，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						if (result.status == 403) {
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "激活失败，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						if(result.status == 404){
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "未找到此用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						if (result.status == 444) {
+							DialogUtil.hideLoading();
+							DialogUtil.showAlert("用户激活错误", "IP列入黑名单，请联系客服<br/>邮箱：channelchina@qcast.cn");
+						}
+						break;
+				}
+			}
+		}
+		$(function() {
+			if (Boolean(sessionStorage.getItem("UserInfo"))) {
+				UserInfo = JSON.parse(sessionStorage.getItem("UserInfo"));
+				sessionStorage.removeItem("UserInfo");
+				console.log(UserInfo.user);
+			}
+		});
+
+		function readAndAgree() {
+			if (focusPos == 0) {
+				if ($("#check").attr("class") == "ok-no") {
+					$(".ok-no").addClass("ok");
+					$(".ok-no").removeClass("ok-no");
+				} else {
+					$(".ok").addClass("ok-no");
+					$(".ok").removeClass("ok");
+				}
+			} else {
+				if ($("#check").attr("class") == "ok") {
+					DialogUtil.showLoading("正在激活...");
+					OISUtil.enableUser();
+				} else {
+					DialogUtil.showAlert("请先阅读并同意服务条款");
+				}
+			}
+		}
+	</script>
+
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<title>LGPortal</title>
+		<link rel="stylesheet" href="css/comm.css" />
+		<link rel="stylesheet" href="css/virtualkeyboard.css" />
+	</head>
+
+	<body>
+		<div style="width: 100%;">
+			<div style="width:100%;">
+				<div class="header">
+					<div class="step">
+						登陆
+					</div>
+					<div style="font-size: 1.3em;">
+						准备去观看成百上千的电影和TV剧吧！
+					</div>
+				</div>
+				<div class="logo"><img src="img/logo.png" /></div>
+			</div>
+		</div>
+		<div style="width: 100%;">
+			<div class="keyboardDiv" style="float: left;width: 50%;padding: 50px;padding-top: 30px;">
+				<div style="width: 100%;">
+					<div id="keyboardSpan" style="font-size: 1.3em;"></div>
+				</div>
+				<div class="virtualcontent">
+				</div>
+				<div class="lastDiv" style="width: 100%;">
+					<div style="width: 100%;">
+						<li class="backNext">
+							<div class="keyback" style="float: left;" onclick="clickBut(0);" onmouseover="mouseOverBut(0,true)">上一步</div>
+							<div class="keynext" style="float:right"  onclick="clickBut(0);" onmouseover="mouseOverBut(1,true)">下一步</div>
+						</li>
+					</div>
+				</div>
+			</div>
+			<div class="registInfo">
+				<input id="username" class="characterskey" readonly="readonly" tabindex="-1" type="text" placeholder="用户名/邮箱/手机号" style="display: block;" />
+				<input id="password" class="characterskey" type="password" readonly="readonly" tabindex="-1" placeholder="密码" />
+			</div>
+		</div>
+		<!--<div id="footer" style="padding: 50px;padding-top: 30px;display: none;">
+			<div id="check" class="ok-no" onclick="clickBut(0);" onmouseover="mouseOverCheck(1)" onmouseout="check_onblur()"></div>
+			<div style="height: 50px;line-height: 50px;">自动登录</div>
+		</div>-->
+		<div style="padding: 20px;position: absolute;right: 0;bottom: 0;">
+			<div>客户服务：channelchina@qcast.cn</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/keyevent.js"></script>
+	<script type="text/javascript" src="js/comm.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/virtual-keyboard.js"></script>
+	<script>
+		var focusPos = 0;
+		var inputPos = 0;
+		var i = -1;
+		var flag = false;
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			console.log(data);
+			if (Boolean(data)) {
+				var result = data.result;
+				console.log()
+				switch (data.event) {
+					case "userLogin":
+						if (data.result == 200) {
+							DialogUtil.hideLoading();
+							window.location = "index.html";
+						}else {
+							focusBackNext($(".lastDiv .backNext"));
+							window.clearInterval(OISUtil.loginIntervalFlag);
+						}
+						break;
+					case "comm_bindUser":
+						if (result.status == 200) {
+							DialogUtil.hideLoading();
+							window.location.href = "index.html";
+						}
+						break;
+					case "comm_bankAccountInfo":
+						if (result.status == 200) {
+							DialogUtil.hideLoading();
+							window.location = "serviceTerms.html";
+						}
+						if (result.status == 402) {
+							DialogUtil.showAlert("用户登录错误","未绑定银行卡!");
+							DialogUtil.hideLoading();
+							window.setTimeout(function(){
+								window.location = "bind.html";
+							},2000);
+						}
+						break;
+				}
+			}
+		}
+
+		function onOISLoad() {
+			/*获取当前用户信息,缓存中有使用缓存中的，没有则保存默认值到缓存中*/
+			if (Boolean(localStorage.getItem("UserInfo"))) {
+				UserInfo = JSON.parse(localStorage.getItem("UserInfo"));
+				if (UserInfo.autoLogin) {
+					DialogUtil.showLoading("正在登陆...");
+					OISUtil.login();
+				} else {
+					$("#username").val(UserInfo.user);
+					return;
+				}
+			}
+		}
+		$(document).ready(function() {
+			virtualkeyboard.init($(".virtualcontent"));
+			$(".registInfo").find("input").each(function(i) {
+				virtualkeyboard.createkeyboard($(this));
+				if (i == 0) {
+					$(this).addClass("onfocus");
+					virtualkeyboard.showkeyboard($(this));
+				} else {
+					$(this).addClass("onblur");
+				}
+			});
+		});
+
+		function eventHandle(keyObj) {
+			if (!virtualkeyboard.flag) {
+				switch (keyObj.str) {
+					case "DPAD_LEFT":
+						if (i == 0) {
+							if (focusPos != 0) {
+								focusPos = focusPos - 1;
+							}
+							focusBackNext($(".lastDiv .backNext"));
+						}
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_RIGHT":
+						if (i == 0) {
+							if (focusPos < 1) {
+								focusPos = focusPos + 1;
+							}
+							focusBackNext($(".lastDiv .backNext"));
+						}
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_UP":
+						if (i == 0) {
+							i = -1;
+							virtualkeyboard.flag = true;
+							focusPos = 0;
+							$(".lastDiv .backNext").children("div").css("border", "3px solid");
+							virtualkeyboard.backkeyboard();
+						} else {
+							i = 0;
+							focusPos = 0;
+							$("#check").css("border", "1px groove");
+							focusBackNext($(".backNext"));
+						}
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_DOWN":
+						if (i == -1) {
+							focusBackNext($(".backNext"));
+							i = 0;
+						}
+                        //不再可以选择自动登录
+						/* else {
+							if (flag) {
+								i = 1;
+								$(".lastDiv .backNext").children("div").css("border", "3px solid");
+								$("#check").css("border", "1px solid rgba(240, 253, 0, 1)");
+							}
+						}*/
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_OK":
+						if (i == 0) {
+							okBackNext($(".onfocus"));
+						} else {
+							if ($("#check").attr("class") == "ok-no") {
+								$(".ok-no").addClass("ok");
+								$(".ok-no").removeClass("ok-no");
+							} else {
+								$(".ok").addClass("ok-no");
+								$(".ok").removeClass("ok");
+							}
+						}
+						break;
+//					case "NAV_BACK":
+//						var value = $(".onfocus").val();
+//						value = value.substring(0, value.length - 1);
+//						$(".onfocus").val(value);
+//						return scrollFun(keyObj.event);
+//						break;
+				}
+				if (keyboardInput(keyObj.value) != null) {
+					var value = $(".onfocus").val();
+					virtualkeyboard.inputStr = keyboardInput(keyObj.value);
+					value += virtualkeyboard.inputStr;
+					$(".onfocus").val(value);
+				}
+			} else {
+				keyboardEvent(keyObj);
+			}
+		};
+		
+		function mouseOverCheck(__inputPos){
+			i = __inputPos;
+			$("#check").css({
+				"border": "3px solid rgba(240, 253, 0, 1)",
+				"box-shadow": "0 0 8px 3px rgba(240, 253, 0, .8)",
+			});
+		}
+		
+		function check_onblur(){
+			$("#check").css({
+				"border": "3px solid",
+				"box-shadow": "none"
+			});
+		}
+		
+		function clickBut(_i){
+			i = _i;
+			if (i == 0) {
+				okBackNext($(".onfocus"));
+			} else {
+				if ($("#check").attr("class") == "ok-no") {
+					$(".ok-no").addClass("ok");
+					$(".ok-no").removeClass("ok-no");
+				} else {
+					$(".ok").addClass("ok-no");
+					$(".ok").removeClass("ok");
+				}
+			}
+		}
+		
+		function mouseOverBut(__focusPos,__flag){
+			i = 0;
+			focusPos = __focusPos;
+			virtualkeyboard.flag = false;
+			$(".virtualcontent").find("div").find("div").find("ul li div").css({
+				"border": "3px solid"
+			});
+			$(".lastDiv .backNext").find("div").each(function(i) {
+				if (focusPos == i) {
+					virtualkeyboard.setCss(this);
+				}
+			});
+			
+		}
+
+		function focusBackNext(__this) {
+			if (typeof __this == "object") {
+				__this.find("div").each(function(i) {
+					if (focusPos == i) {
+						virtualkeyboard.setCss(this);
+					}
+				});
+			} else {
+				console.log("element is not object")
+			}
+		}
+        function delFreeTaste(){
+
+        }
+		function okBackNext(__this) {
+			if (typeof __this == "object") {
+				if (focusPos == 0) {
+					if (__this.prev().length > 0) {
+						inputPos = inputPos - 1;
+						__this.removeClass("onfocus");
+						__this.addClass("onblur");
+						__this.prev().removeClass("onblur");
+						__this.prev().addClass("onfocus");
+						flag = false;
+						$("#footer").css("display", "none");
+						virtualkeyboard.showkeyboard(__this.prev());
+						return;
+					} else {
+						window.history.go(-1);
+					}
+				} else {
+					if (__this.next().length > 0) {
+						inputPos = inputPos + 1;
+						__this.removeClass("onfocus");
+						__this.addClass("onblur");
+						__this.next().removeClass("onblur");
+						__this.next().addClass("onfocus");
+						flag = true;
+						$("#footer").css("display", "block");
+						virtualkeyboard.showkeyboard(__this.next());
+						return;
+					} else {
+						$(".lastDiv .backNext").children().css("border", "3px solid");
+						var username = $("#username").val();
+						var password = $("#password").val();
+						if (Boolean(username) && Boolean(password)) {
+							UserInfo.user = username;
+							UserInfo.password = password;
+							if ($("#check").attr("class") == "ok") {
+								UserInfo.autoLogin = true;
+							}
+							DialogUtil.showLoading("正在登陆...");
+							OISUtil.login();
+						} else {
+							if (!Boolean(password)) {
+								errorFocus($("#password"));
+								DialogUtil.showAlert("用户登录错误", "密码不能为空!");
+							}
+							if (!Boolean(username)) {
+								errorFocus($("#username"));
+								DialogUtil.showAlert("用户登录错误", "用户名不能为空!");
+							}
+						}
+					}
+				}
+			} else {
+				console.log("element is not object");
+			}
+		}
+		
+		function errorFocus(__this){
+			$(".registInfo").find("input").removeClass("onfocus");
+			$(".registInfo").find("input").addClass("onblur");
+			__this.addClass("onfocus");
+			__this.removeClass("onblur");
+			virtualkeyboard.showkeyboard($(".onfocus"));
+			$(".keynext").css("border","3px solid rgba(240, 253, 0, 1)");
+		}
+	</script>
+
+</html>

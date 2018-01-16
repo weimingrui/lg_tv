@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.titleFocus {
+				display: none;
+				position: absolute;
+				width: 200px;
+				height: 50px;
+				background-color: #FFA300
+			}
+			.titleBox {
+				position: absolute;
+				width: 100%
+			}
+			.title {
+				width: 170px;
+				height: 50px;
+				line-height: 50px;
+				padding: 0 15px;
+				white-space: nowrap;
+				overflow: hidden;
+				font-size: 24px
+			}
+			.contentBox {
+				padding: 15px;
+				width: 990px;
+				height: 550px;
+				background: rgba(0, 0, 0, .3);
+				overflow: hidden;
+				font-size: 24px
+			}
+			.confrimBox {
+				display: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="titleFocus"></div>
+		<div class="focus"></div>
+		<div class="columnTitleBox">
+			<div class="columnTitle">
+				留言记录  
+			    <span style="font-size: 30PX;">Message</span>
+			</div>
+			<img class="clearBtn" src="img/clear_btn.png" onmouseover="mouserOverBtn()">
+		</div>
+		<div style="width:100%;height:600px;margin-top:20px">
+			<div id="messageScroll" style="width:220px;height:100%;overflow-y:auto" onscroll="scrollMessage(this);">
+				<div class="titleBox"></div>
+			</div>
+			<div class="contentBox"></div>
+		</div>
+		<div class="confrimBox">
+			<div class="confrim" style="z-index:3">
+				<div class="confrimText" style="position: absolute;">确定删除该消息？</div>
+				<img id="confrimImg" style="opacity: 0.0;" src="img/confrim_bg.png" usemap="#test">
+				<map name="test">
+					<area shape="rect" coords="0,180,293,264" onclick="clickConfrim();" />
+					<area shape="rect" coords="293,180,590,264" onclick="clickCancel();" />
+				</map>
+				<div style="position: absolute;top: 180px;z-index: -1;">
+					<div class="confrim-btn"></div>
+					<div class="cancel-btn"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.min.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var messageList = new Array(),
+			onBtnFlag = false,
+			focusPos = titlePos = 0;
+		var topValue = 0, // 上次滚动条到顶部的距离  
+			interval = null; // 定时器
+		var scrollTop = 0;
+		var newTitlePos = 0;
+		var delConfirmBoxObj = new BoxObject(".confrimBox", 0, function() {
+			$(".titleFocus").hide(), focusPos = 0;
+			setConfirmBoxFocus();
+		}, function() {
+			if (focusPos == 0) {
+				MessageUtil.remove(titlePos);
+				$(".titleBox").empty(), $(".contentBox").text("");
+				messageList = MessageUtil.getList();
+				if (messageList.length > 0) {
+					$.each(messageList, function(i) {
+						$(".titleBox").append('<div class="title" onclick="clickMessage(' + i + ');">' + this.title + "</div>");
+					});
+					if (titlePos > messageList.length - 1) titlePos = messageList.length - 1;
+					var top = parseInt($(".titleBox").position().top);
+					focusPos = titlePos + Math.floor(top / 50);
+					setTitleFocus();
+				} else $(".titleBox").append('<div class="title">暂无记录</div>');
+			} else {
+				var top = parseInt($(".titleBox").position().top);
+				focusPos = titlePos + Math.floor(top / 50);
+				setTitleFocus();
+			}
+		});
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "message":
+					initMessageList();
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+//			if (messageList.length == 0) return;
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (delConfirmBoxObj.showFlag) {
+						if (focusPos == 1) focusPos = 0;
+						setConfirmBoxFocus();
+					} else if (onBtnFlag && messageList.length > 0) setTitleFocus();
+					break;
+				case "DPAD_UP":
+					if (!onBtnFlag && !delConfirmBoxObj.showFlag) {
+						if (titlePos != 0) titlePos--;
+						else break;
+						if (focusPos != 0) focusPos--;
+						setTitleFocus();
+					}
+					break;
+				case "DPAD_RIGHT":
+					if (delConfirmBoxObj.showFlag) {
+						if (focusPos == 0) focusPos = 1;
+						setConfirmBoxFocus();
+					} else if (!onBtnFlag) setBtnFocus();
+					break;
+				case "DPAD_DOWN":
+					if (!onBtnFlag && !delConfirmBoxObj.showFlag) {
+						if (titlePos != messageList.length - 1) titlePos++;
+						else break;
+						if (focusPos < 11 && focusPos < messageList.length - 1) focusPos++;
+						setTitleFocus();
+					}
+					break;
+				case "DPAD_OK":
+					if (delConfirmBoxObj.showFlag) {
+						delConfirmBoxObj.hide();
+					} else if (onBtnFlag && messageList.length > 0) {
+						MessageUtil.clear();
+						messageList.length = focusPos = titlePos = 0;
+						$(".titleBox").empty();
+						$(".contentBox").text("");
+						DialogUtil.showToast("清除记录成功");
+					} else {
+						DialogUtil.showAlert("提示","<center>暂无记录，无需清除！</center>");
+					}
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			initMessageList();
+		});
+		
+		function mouserOverBtn(){
+			if( messageList.length > 0){
+				$(".titleFocus").hide();
+				$(".focus").show();
+				$(".focus").css({
+					top: 29,
+					left: 1086,
+					width: 129,
+					height: 53
+				});
+			}
+		}
+
+		function clickMessage(__titlePos) {
+			onBtnFlag = false;
+			if (!delConfirmBoxObj.showFlag) {
+				titlePos = __titlePos;
+				focusPos = __titlePos - newTitlePos;
+				setTitleFocus();
+			}
+		}
+
+		function scrollMessage(__this) {
+			$(".focus").hide();
+			$(".titleFocus").hide();
+			scrollTop = $(__this).scrollTop();
+			newTitlePos = Math.ceil(scrollTop / 60);
+			if (interval == null) {
+				interval = setInterval("test()", 1000);
+			}
+			topValue = scrollTop;
+		}
+
+		function test() {
+			if ($("#messageScroll").scrollTop() == topValue) {
+				$("#messageScroll").scrollTop(50 * newTitlePos);
+				if (titlePos - newTitlePos >= 0 && titlePos - newTitlePos < 12) {
+					$(".titleFocus").show();
+					$(".titleFocus").css({
+						top: 120 + (titlePos - newTitlePos) * 50,
+						left: 0,
+						width: 220,
+						height: 50
+					});
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function clickConfrim() {
+			focusPos = 0;
+			$(".cancel-btn").css("visibility", "hidden");
+			$(".confrim-btn").css("visibility", "visible");
+			if (delConfirmBoxObj.showFlag) {
+				delConfirmBoxObj.hide();
+			}
+		}
+
+		function clickCancel() {
+			focusPos = 1;
+			$(".confrim-btn").css("visibility", "hidden");
+			$(".cancel-btn").css("visibility", "visible");
+			if (delConfirmBoxObj.showFlag) {
+				delConfirmBoxObj.hide();
+			}
+		}
+
+		function initMessageList() {
+			$(".titleBox").empty(), $(".contentBox").text("");
+			messageList = MessageUtil.getList();
+			if (messageList.length > 0) {
+				$.each(messageList, function(i) {
+					$(".titleBox").append('<div class="title" onclick="clickMessage(' + i + ');">' + this.title + "</div>");
+				});
+				setTitleFocus();
+				DialogUtil.showToast("按[OK]键删除消息");
+			} else $(".titleBox").append('<div class="title">暂无记录</div>');
+		}
+
+		function clearMarquee() {
+			$(".title marquee").each(function() {
+				var $this = $(this);
+				$this.parent().html($this.html());
+			});
+		}
+
+		function addMarquee() {
+			var title = messageList[titlePos].title;
+			if (ToolsUtil.getStringLength(title) > 18) $($(".title")[titlePos]).html('<marquee width="170" height="24" vspace="0" behavior="scroll">' + title + "</marquee>");
+		}
+
+		function setTitleFocus(i) {
+			onBtnFlag = false;
+			clearMarquee();
+			if (i == undefined) {
+				if (titlePos > focusPos) {
+					$("#messageScroll").scrollTop(50 * (titlePos - focusPos));
+				} else {
+					$("#messageScroll").scrollTop(50 * (focusPos - titlePos));
+				}
+			}
+			$(".focus").hide();
+			$(".titleFocus").show();
+			$(".titleFocus").css({
+				top: 120 + focusPos * 50,
+				left: 0,
+				width: 220,
+				height: 50
+			});
+			$(".title").each(function(i) {
+				if (i == titlePos) {
+					$(this).css("color", "#F0FD00");
+				} else {
+					$(this).css("color", "#FFFFFF");
+				}
+			});
+			$(".contentBox").text(messageList[titlePos].content);
+			addMarquee();
+		}
+
+		function setBtnFocus() {
+			onBtnFlag = true;
+			clearMarquee();
+			$(".titleFocus").hide();
+			$(".focus").show();
+			$(".focus").css({
+				top: 29,
+				left: 1086,
+				width: 129,
+				height: 53
+			});
+		}
+
+		function setConfirmBoxFocus() {
+			if (focusPos == 0) {
+				$(".cancel-btn").css("visibility", "hidden");
+				$(".confrim-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".confrim-btn").css("visibility", "hidden");
+				$(".cancel-btn").css("visibility", "visible");
+			}
+		}
+	</script>
+
+</html>

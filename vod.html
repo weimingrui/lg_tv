@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>LGPortal</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.categoryFocus {
+				display: none;
+				position: absolute;
+				width: 184px;
+				height: 44px;
+				border: 3px solid rgba(240, 253, 0, 1);
+				border-radius: 3px;
+				box-shadow: 0 0 8px 3px rgba(240, 253, 0, .8);
+			}
+			.categoryBox {
+				position: absolute;
+				width: 100%
+			}
+			.category {
+				width: 150px;
+				height: 60px;
+				line-height: 60px;
+				padding-left: 30px;
+				font-size: 24px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			.mediaBox {
+				position: absolute;
+				top: 0;
+				width: 100%
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="categoryFocus"></div>
+		<div class="focus" onclick="clickMedia(mediaPos)"></div>
+		<div class="columnTitleBox">
+			<div class="columnTitle"></div>
+			<div style="float:right;margin:50px 100px 0 0;padding-left:50px;line-height:40px;background:url(img/vod_search.png) no-repeat no-repeat;font-size:24px" onclick="clickSearch()" onmouseover="mouseOverSearchBtn();">搜索</div>
+		</div>
+		<div style="width:100%;height:600px;margin-top:20px">
+			<div id="categoryScroll" style="width:200px;height:100%;overflow-y:auto;overflow-x: hidden;" onscroll="scrollCategory(this,boxPos);">
+				<div class="categoryBox"></div>
+			</div>
+			<div id="mediaScroll" style="width:1020px;height:100%;margin:0 30px 0 30px;overflow-y:auto" onscroll="scrollCategory(this,boxPos);">
+				<div class="mediaBox"></div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var i = 0;
+		var flag = false;
+		var extraScrollTop = 0;
+		var newCategoryPos = 0;
+		var scrollTop = 0;
+		var mediaScrollTop = 0;
+		var newMeidaPos = 0;
+		var topValue = 0, // 上次滚动条到顶部的距离
+			inter = null;
+		interval = null; // 定时器
+		var columnId = window.location.search.substring(1),
+			categoryId = 0;
+		var columnTitle = ["直播录像", "精彩点播"],
+			categoryList = new Array(),
+			areaList = null,
+			yearList = new Array(),
+			mediaList = new Array();
+		var initPageIndex = pageIndex = 0,
+			pageSize = 15,
+			pageCount = 0,
+			totalCount = 0,
+			boxPos = 0,
+			focusPos = 0,
+			oldCategoryPos = categoryPos = 0,
+			mediaPos = 0;
+
+		function onMessage(e) {
+			console.log(e);
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "category":
+					categoryList = categoryList.concat(data.result);
+					$.each(categoryList, function(i) {
+						//this.total < 10 ? this.total = "00" + this.total : this.total < 100 && (this.total = "0" + this.total);
+						if (this.id == 0) this.title = "全部";
+						if (this.id == -1) this.title = "其它";
+						$(".categoryBox").append('<div class="category" onclick="clickCategory(' + i + ')" onmouseover="mouseOverCategory('+i+')">' + this.title + "&nbsp;<small>(" + this.total + ")</small></div>");
+					});
+					selectedCategory();
+					if (boxPos == 0) setCategoryFocus();
+					break;
+				case "media":
+					if (!Boolean(data.result.list) || data.result.list.length == 0) {
+						DialogUtil.hideLoading();
+						break;
+					}
+					pageCount = data.result.pagecount;
+					totalCount = data.result.totalcount;
+					mediaList = mediaList.concat(data.result.list);
+					if (pageIndex < initPageIndex) {
+						loadNextPage();
+						break;
+					} else if (pageIndex == initPageIndex) {
+						$.each(mediaList, function() {
+							$(".mediaBox").append(mediaHtml(this));
+						});
+						if (boxPos == 1) setMediaFocus(1);
+						else {
+							$(".mediaBox").css({
+								top: -270 * Math.floor(mediaPos / 5)
+							});
+						}
+					} else {
+						$.each(data.result.list, function() {
+							$(".mediaBox").append(mediaHtml(this));
+						});
+					}
+					DialogUtil.hideLoading();
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (boxPos == 1) {
+						if (focusPos % 5 == 0) {
+							clearMarquee();
+							if (Math.floor(focusPos / 5) == 1) mediaPos -= 5;
+							boxPos = 0, categoryPos = oldCategoryPos;
+							var top = parseInt($(".categoryBox").position().top);
+							focusPos = categoryPos + Math.floor(top / 60);
+							if (focusPos < 0) focusPos = 0;
+							else if (focusPos > 9) focusPos = 9;
+							setCategoryFocus();
+						} else {
+							focusPos--;
+							mediaPos--;
+							setMediaFocus();
+						}
+					} else if (boxPos == 2) {
+						mediaPos = 0, boxPos = 0, categoryPos = oldCategoryPos;
+						var top = parseInt($(".categoryBox").position().top);
+						focusPos = categoryPos + Math.floor(top / 60);
+						if (focusPos < 0) focusPos = 0;
+						else if (focusPos > 9) focusPos = 9;
+						setCategoryFocus();
+					}
+					break;
+				case "DPAD_UP":
+					if (boxPos == 0) {
+						if (categoryPos != 0) categoryPos--;
+						else break;
+						if (focusPos != 0) focusPos--;
+						setCategoryFocus();
+					} else if (boxPos == 1) {
+						if (mediaPos > 4) mediaPos -= 5;
+						else {
+							boxPos = 2, $(".focus").hide(), $(".categoryFocus").show();
+							$(".categoryFocus").css({
+								top: 45,
+								left: 1069,
+								width: 120,
+								height: 44
+							});
+							break;
+						}
+						if (focusPos > 4) focusPos -= 5;
+						setMediaFocus();
+					}
+					break;
+				case "DPAD_RIGHT":
+					if (boxPos == 0 && mediaList.length > 0) {
+						boxPos = 1, focusPos = 0;
+						window.clearTimeout(timeoutToSearchFlag);
+						setMediaFocus();
+					} else if (boxPos == 1) {
+						if (mediaPos < mediaList.length - 1) mediaPos++;
+						else break;
+						if (focusPos == 9) focusPos = 5;
+						else focusPos++;
+						setMediaFocus();
+						if (Math.floor(mediaPos / pageSize) == pageIndex) loadNextPage();
+					}
+					break;
+				case "DPAD_DOWN":
+					if (boxPos == 0) {
+						if (categoryPos != categoryList.length - 1) categoryPos++;
+						else break;
+						if (focusPos < 9 && focusPos < categoryList.length - 1) focusPos++;
+						setCategoryFocus();
+					} else if (boxPos == 1) {
+						if (mediaPos < Math.floor((mediaList.length - 1) / 5) * 5) {
+							mediaPos += 5;
+							if (mediaPos > mediaList.length - 1) mediaPos = mediaList.length - 1;
+						} else break;
+						if (focusPos < 5 && focusPos % 5 == mediaPos % 5) {
+							focusPos += 5;
+							setMediaFocus();
+						} else focusPos = mediaPos % 5 + 5;
+						setMediaFocus();
+						if (Math.floor(mediaPos / pageSize) == pageIndex) loadNextPage();
+					} else if (boxPos == 2) {
+						boxPos = 1, $(".focus").show(), $(".categoryFocus").hide();
+						setMediaFocus();
+					}
+					break;
+				case "DPAD_OK":
+					if (boxPos == 0) {
+						search();
+					} else if (boxPos == 1) {
+						DialogUtil.showLoading("正在跳转...");
+						sessionStorage.setItem("vodInitObj", JSON.stringify({
+							boxPos: boxPos,
+							categoryId: categoryId,
+							focusPos: focusPos,
+							categoryPos: oldCategoryPos,
+							initPageIndex: pageIndex,
+							mediaPos: mediaPos,
+							scrollTop: mediaScrollTop
+						}));
+						window.location.href = "detail.html?cid=" + columnId + "&mid=" + mediaList[mediaPos].id;
+					} else {
+						DialogUtil.showLoading("正在跳转...");
+						window.location.href = "search.html?" + columnId;
+					}
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			DialogUtil.showLoading();
+			if (Boolean(sessionStorage.getItem("vodInitObj"))) {
+				var initObj = JSON.parse(sessionStorage.getItem("vodInitObj"));
+				console.log(initObj);
+				categoryId = initObj.categoryId;
+				boxPos = initObj.boxPos;
+				focusPos = initObj.focusPos;
+				categoryPos = initObj.categoryPos;
+				initPageIndex = initObj.initPageIndex;
+				mediaPos = initObj.mediaPos;
+				mediaScrollTop = initObj.scrollTop;
+				extraScrollTop = initObj.extraScrollTop;
+				flag = initObj.flag;
+				sessionStorage.removeItem("vodInitObj");
+			}
+			$(".columnTitle").html(columnTitle[columnId % 100]);
+			EPGSUtil.getCategory(columnId, "category");
+			EPGSUtil.getMediaByColumnId(columnId, categoryId, pageIndex, pageSize, "media");
+		});
+
+		function clickCategory(__categoryPos) {
+			boxPos = 0;
+			i = 0;
+			focusPos = __categoryPos - newCategoryPos;
+			categoryPos = __categoryPos;
+			setCategoryFocus(1);
+			search();
+		}
+		
+		function mouseOverCategory(__categoryPos){
+			boxPos = 0;
+			i = 0;
+			focusPos = __categoryPos - newCategoryPos;
+			categoryPos = __categoryPos;
+			setCategoryFocus(1);
+			search();	
+		}
+		
+		function clickSearch() {
+			DialogUtil.showLoading("正在跳转...");
+			window.location.href = "search.html?" + columnId;
+		}
+		
+		function mouseOverSearchBtn(){
+			boxPos = 2, $(".focus").hide(), $(".categoryFocus").show();
+			$(".categoryFocus").css({
+				top: 45,
+				left: 1069,
+				width: 120,
+				height: 44
+			});
+			focusPos = focusPos%5;
+			mediaPos = mediaPos-5;
+		}
+
+		function scrollCategory(__this, __boxPos) {
+			if ($(__this).attr("id") == "mediaScroll") {
+				flag = true;
+				$(".focus").hide();
+				mediaScrollTop = $(__this).scrollTop();
+				newMeidaPos = Math.ceil(mediaScrollTop / 270);
+				if (interval == null) {
+					interval = setInterval("test1()", 1000);
+				}
+				topValue = mediaScrollTop;
+				if (inter == null) {
+					inter = setInterval(function() {
+						var nScrollHight = 0; //滚动距离总长(注意不是滚动条的长度)
+						var nScrollTop = 0; //滚动到的当前位置
+						var nDivHight = $("#mediaScroll").height();
+						nScrollHight = $(__this)[0].scrollHeight;
+						nScrollTop = $(__this)[0].scrollTop;
+						if (nScrollTop + nDivHight >= nScrollHight) {
+							if (Math.floor((i - 1) / pageSize) == pageIndex) {
+								loadNextPage();
+							}
+							window.clearInterval(inter);
+							inter = null;
+						}
+					}, 1000);
+				}
+			} else {
+				$(".categoryFocus").hide();
+				scrollTop = $(__this).scrollTop();
+				newCategoryPos = Math.ceil(scrollTop / 60);
+				if (interval == null) {
+					interval = setInterval("test(" + scrollTop + ")", 1000);
+				}
+				topValue = scrollTop;
+			}
+		}
+
+		function test1() {
+			if ($("#mediaScroll").scrollTop() == topValue && flag == true) {
+				$(".focus").show();
+				$("#mediaScroll").scrollTop(270 * newMeidaPos);
+				if (mediaPos >= 5 * newMeidaPos && mediaPos < 5 * (newMeidaPos + 2) && boxPos == 1) {
+					if ((mediaScrollTop) % 270 != 0) {
+						extraScrollTop = 270 - ((mediaScrollTop) % 270);
+					} else {
+						extraScrollTop = 0;
+					}
+					$(".focus").show();
+					$(".focus").css({
+						top: 123 + Math.floor(((5 * (newMeidaPos + 1)) > mediaPos) ? 0 : 1) * 270 + extraScrollTop,
+						left: 247 + focusPos % 5 * 200,
+						width: 160,
+						height: 230
+					});
+				} else {
+					$(".focus").hide();
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function clickMedia(__focusPos) {
+			boxPos = 1;
+			focusPos = __focusPos;
+			mediaPos = __focusPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 9) {
+				focusPos = (__focusPos % 5 == 0) ? 5 : (__focusPos % 5) + 5;
+			}
+			setMediaFocus();
+			DialogUtil.showLoading("正在跳转...");
+			sessionStorage.setItem("vodInitObj", JSON.stringify({
+				boxPos: boxPos,
+				categoryId: categoryId,
+				focusPos: focusPos,
+				categoryPos: oldCategoryPos,
+				initPageIndex: pageIndex,
+				mediaPos: mediaPos,
+				scrollTop: mediaScrollTop,
+				extraScrollTop: extraScrollTop,
+				flag: flag
+			}));
+			window.location.href = "detail.html?cid=" + columnId + "&mid=" + mediaList[mediaPos].id;
+		}
+		
+		function onMouseOverMedia(__focusPos){
+			boxPos = 1;
+			focusPos = __focusPos;
+			mediaPos = __focusPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 9) {
+				focusPos = (__focusPos % 5 == 0) ? 5 : (__focusPos % 5) + 5;
+			}
+			setMediaFocus();
+		}
+		
+		function test(__scrollTop) {
+			// 判断此刻到顶部的距离是否和1秒前的距离相等  
+			if ($("#categoryScroll").scrollTop() == topValue) {
+				$("#categoryScroll").scrollTop(60 * newCategoryPos);
+				if (categoryPos - newCategoryPos >= 0 && categoryPos - newCategoryPos <= 9) {
+					$(".categoryFocus").show();
+					$(".categoryFocus").css({
+						top: (125 + (categoryPos - newCategoryPos) * 60),
+						left: 15,
+						width: 159,
+						height: 44
+					});
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function onEPGSLoad() {}
+
+		function selectedCategory() {
+			$(".categoryBox div.category").eq(oldCategoryPos).css("color", "#F4F4F4");
+			$(".categoryBox div.category").eq(categoryPos).css("color", "#F0FD00");
+			oldCategoryPos = categoryPos;
+		}
+		var timeoutToSearchFlag = -1;
+
+		function setCategoryFocus(i) {
+			window.clearTimeout(timeoutToSearchFlag);
+			if (i == undefined) {
+				if (categoryPos > focusPos) {
+					$("#categoryScroll").scrollTop(60 * (categoryPos - focusPos));
+				} else {
+					$("#categoryScroll").scrollTop(60 * (focusPos - categoryPos));
+				}
+			}
+			$("#mediaScroll").scrollTop(0);
+			$(".focus").hide();
+			$(".categoryFocus").show();
+			$(".categoryFocus").css({
+				top: 125 + (categoryPos - newCategoryPos) * 60,
+				left: 15,
+				width: 159,
+				height: 44
+			});
+			if (i == undefined) {
+				if (oldCategoryPos != categoryPos) {
+					timeoutToSearchFlag = window.setTimeout(function() {
+						search();
+					}, 2e3);
+				}
+			}
+		}
+
+		function setMediaFocus(i) {
+			clearMarquee();
+			if (i == undefined) {
+				if (mediaPos > focusPos) {
+					$("#mediaScroll").scrollTop(270 * (mediaPos - focusPos));
+				} else {
+					$("#mediaScroll").scrollTop(270 * (focusPos - mediaPos));
+				}
+			}
+			if (mediaPos > 9 || focusPos < 9) {
+				$("#mediaScroll").scrollTop(270 * Math.floor((mediaPos - focusPos) / 5));
+			}
+			if (i == undefined) {
+				mediaScrollTop = $("#mediaScroll").scrollTop();
+			} else {
+				flag = true;
+			}
+			newMeidaPos = Math.ceil(mediaScrollTop / 270);
+			if ((mediaScrollTop) % 270 != 0) {
+				extraScrollTop = 270 - ((mediaScrollTop) % 270);
+			} else {
+				extraScrollTop = 0;
+			}
+			$(".categoryFocus").hide();
+			$(".focus").show();
+			$(".focus").css({
+				top: 123 + Math.floor(focusPos / 5) * 270 + extraScrollTop,
+				left: 247 + focusPos % 5 * 200,
+				width: 160,
+				height: 230
+			});
+			addMarquee();
+		}
+
+		function search() {
+			DialogUtil.showLoading("正在加载中...");
+			selectedCategory();
+			$(".mediaBox").empty();
+			$(".mediaBox").css({
+				top: 0
+			});
+			mediaList.length = 0;
+			initPageIndex = pageIndex = pageCount = totalCount = mediaPos = 0;
+			categoryId = categoryList[focusPos + newCategoryPos].id;
+			EPGSUtil.getMediaByColumnId(columnId, categoryId, pageIndex, pageSize, "media");
+		}
+
+		function loadNextPage() {
+			if (pageIndex < pageCount - 1) {
+				pageIndex++;
+				EPGSUtil.getMediaByColumnId(columnId, categoryId, pageIndex, pageSize, "media");
+			}
+		}
+
+		function clearMarquee() {
+			$(".vodTitle marquee").each(function() {
+				var $this = $(this);
+				$this.parent().html($this.html());
+			});
+		}
+
+		function addMarquee() {
+			var title = mediaList[mediaPos].title;
+			if (ToolsUtil.getStringLength(title) > 18) $($(".vodTitle")[mediaPos]).html('<marquee width="162" height="24" align="absmiddle" behavior="scroll">' + title + "</marquee>");
+		}
+
+		function mediaHtml(mediaObj) {
+			var html = '<div class="vod" onclick = "clickMedia(' + i + ')" onmouseover="onMouseOverMedia('+i+')"><div class="vodImg">';
+			html += '<img width="160" height="230" src="' + mediaObj.thumbnail + '"></div>';
+			html += '<div class="vodTitle">' + mediaObj.title + "</div></div>";
+			i += 1;
+			return html;
+		}
+	</script>
+
+</html>

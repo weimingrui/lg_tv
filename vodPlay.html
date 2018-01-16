@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			div {
+				position: absolute
+			}
+			.focus {
+				display: none
+			}
+			.button {
+				position: relative;
+				float: left
+			}
+			.loadBox {
+				display: none;
+				top: 250px;
+				left: 0;
+				width: 100%;
+				height: 70px
+			}
+			.loadText {
+				width: 100%;
+				margin-top: 30px;
+				color: #fff;
+				font-size: 36px;
+				text-align: center
+			}
+			.subscribeBox,
+			.qualityBox {
+				display: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2
+			}
+			.statusBigImg {
+				display: none;
+				position: absolute;
+				top: 260px;
+				left: 540px;
+				width: 200px;
+				height: 200px
+			}
+			.controlsBox {
+				display: none;
+				left: 0;
+				bottom: 0;
+				width: 1280px;
+				height: 109px;
+				background: rgba(0, 0, 0, .5)
+			}
+			.title {
+				top: 10px;
+				left: 15px;
+				font-size: 24px
+			}
+			.nowTime {
+				top: 10px;
+				left: 864px;
+				font-size: 24px
+			}
+			.statusImg {
+				position: absolute;
+				top: 40px;
+				left: 0
+			}
+			.processBar {
+				position: absolute;
+				top: 63px;
+				left: 80px;
+				width: 0;
+				height: 24px
+			}
+			.seekPoint {
+				position: absolute;
+				top: 50px;
+				left: 65px
+			}
+			.seekTime {
+				top: 61px;
+				left: 940px;
+				font-size: 20px
+			}
+			.currentTimeAndDuration {
+				top: 61px;
+				left: 1050px;
+				font-size: 20px
+			}
+            .playRecordBox {
+                display: none;
+                position: absolute;
+                width:1280px;
+                height: 720px;
+                left:0px;
+                top:0px;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 3
+            }
+            .confrim {
+                background: url(img/confrim_bg_2.png);
+            }
+            .confrim-btn {
+                background: url(img/confrim_btn_2.png);
+            }
+            .cancel-btn {
+                background: url(img/cancel_btn_2.png);
+            }
+		</style>
+	</head>
+
+	<body onunload="savePlayRecord();">
+		<div style="position:relative;width:100%;height:100%;background:#000000;text-align:center;">
+			<video id="video" width="100%" height="100%" onclick="clickMedia();">
+				<source type="application/vnd.apple.mpegurl"></source>
+			</video>
+            <div class="playRecordBox">
+                <div class="confrim" style="z-index:4;">
+                    <div class="confrimText"></div>
+                    <div class="confrim-btn" onclick="clickLogin(0)" onmouseover="mouseOverLogin(0)" onmouseout="mouseOverLogin(1)"></div>
+                    <div class="cancel-btn" onclick="clickLogin(1)" onmouseover="mouseOverLogin(1)" onmouseout="mouseOverLogin(0)"></div>
+                </div>
+            </div>
+			<div class="loadBox">
+				<img width="60" height="60" src="img/loading.gif">
+				<div class="loadText"></div>
+			</div>
+			<div class="subscribeBox">
+				<div class="confrim" style="z-index:3">
+					<div class="confrimText">该片为收费片源，是否订购？</div>
+					<div class="confrim-btn"></div>
+					<div class="cancel-btn"></div>
+				</div>
+			</div>
+			<div class="qualityBox">
+				<div class="quality">
+					<div class="quality-btn0"></div>
+					<div class="quality-btn1"></div>
+					<div class="quality-btn2"></div>
+					<div class="quality-btn3"></div>
+				</div>
+			</div>
+			<img class="statusBigImg" src="img/play.png">
+			<div class="controlsBox">
+				<div class="title"></div>
+				<div class="nowTime"></div>
+				<img class="statusImg" src="img/play_btn.png">
+				<img width="850" height="24" style="position:absolute;top:63px;left:80px;" src="img/seek_bg.png">
+				<img class="processBar" src="img/seek_bar.png">
+				<img class="seekPoint" src="img/seek_point.png">
+				<div class="seekTime">00:00:00</div>
+				<div class="currentTimeAndDuration">00:00:00 / 00:00:00</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.min.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var urlPos =ToolsUtil.getHrefParams("urlpos"),
+			playTime = ToolsUtil.getHrefParams("playtime"),
+			watchDuration = ToolsUtil.getHrefParams("watchduration"),
+			videoObj = $("#video").get(0),
+			mediaObj = null,
+			quality = 3,
+			focusPos = 0;
+		var subscribeBoxObj = new BoxObject(".subscribeBox", 0, function() {
+			videoObj.pause(), focusPos = 0;
+			setSubscribeFocus();
+		}, function() {
+			savePlayRecord();
+			if (focusPos == 0) window.location.href = "subscribe.html";
+			else window.history.go(-1);
+		});
+		var qualityBoxObj = new BoxObject(".qualityBox", 0, function() {
+			focusPos = quality;
+			setQualityFocus();
+		});
+		var controlBoxObj = new BoxObject(".controlsBox", 3e3, function() {
+			currentTime = videoObj.currentTime;
+			$(".currentTimeAndDuration").text(ToolsUtil.formatTime(videoObj.currentTime) + " / " + ToolsUtil.formatTime(videoObj.duration));
+			setSeekPointPos();
+		}, function() {
+			isSeek = false;
+		});
+        var setPlayFocusPos = 0;
+		addVideoEventListener();
+
+		function eventHandle(keyObj) {
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+                     if(playRecordBoxObj.showFlag){
+                        if(setPlayFocusPos!=0){
+                            setPlayFocusPos=0;
+                            setPlayrecordFocus();
+                        }
+                     }else if (subscribeBoxObj.showFlag) {
+						if (focusPos > 0) {
+							focusPos--;
+							setSubscribeFocus();
+						}
+					} else if (qualityBoxObj.showFlag) {
+						if (focusPos > 0) {
+							focusPos--;
+							setQualityFocus();
+						}
+					} else if (!controlBoxObj.showFlag && videoObj.duration > 0) {
+						controlBoxObj.show();
+					} else if (videoObj.readyState == 4) {
+						seek(-1);
+					}
+					break;
+				case "DPAD_UP":
+                    if(playRecordBoxObj.showFlag){
+
+                    }else if (!subscribeBoxObj.showFlag && !qualityBoxObj.showFlag) controlBoxObj.show();
+					break;
+				case "DPAD_RIGHT":
+                    if(playRecordBoxObj.showFlag){
+                        if(setPlayFocusPos!=1){
+                            setPlayFocusPos=1;
+                            setPlayrecordFocus();
+                        }
+                    }else if (subscribeBoxObj.showFlag) {
+						if (focusPos < 1) {
+							focusPos++;
+							setSubscribeFocus();
+						}
+					} else if (qualityBoxObj.showFlag) {
+						if (focusPos < 3) {
+							focusPos++;
+							setQualityFocus();
+						}
+					} else if (!controlBoxObj.showFlag && videoObj.duration > 0) {
+						controlBoxObj.show();
+					} else if (videoObj.readyState == 4) {
+						seek(1);
+					}
+					break;
+				case "TRANSPORT_PLAY":
+					play();
+					break;
+				case "TRANSPORT_PAUSE":
+					pause();
+					break;
+				case "DPAD_OK":
+                    if (playRecordBoxObj.showFlag) {
+                        clickLogin(setPlayFocusPos);
+                        playRecordBoxObj.hide();
+                    }else{
+                        if (subscribeBoxObj.showFlag) {
+                            subscribeBoxObj.hide();
+                        } else if (qualityBoxObj.showFlag) {
+                            qualityBoxObj.hide();
+                            playTime = videoObj.currentTime;
+                            quality = focusPos;
+                            videoLoad();
+                        } else if (!controlBoxObj.showFlag) {
+                            changeStatus();
+                        } else if (isSeek && currentTime != videoObj.currentTime) {
+                            videoObj.currentTime = currentTime;
+                            controlBoxObj.hide();
+                            play();
+                        } else changeStatus();
+                    }
+					break;
+				case "NAV_INFO":
+					if (!qualityBoxObj.showFlag) qualityBoxObj.show();
+					else qualityBoxObj.hide();
+					break;
+				case "NAV_BACK":
+					if (qualityBoxObj.showFlag) {
+						qualityBoxObj.hide();
+					} else {
+						savePlayRecord();
+						window.history.go(-1);
+					}
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+
+		function clickMedia() {
+			if (subscribeBoxObj.showFlag) {
+				subscribeBoxObj.hide();
+			} else if (qualityBoxObj.showFlag) {
+				qualityBoxObj.hide();
+				playTime = videoObj.currentTime;
+				quality = focusPos;
+				videoLoad();
+			} else if (!controlBoxObj.showFlag) {
+				changeStatus();
+			} else if (isSeek && currentTime != videoObj.currentTime) {
+				videoObj.currentTime = currentTime;
+				controlBoxObj.hide();
+				play();
+			} else changeStatus();
+			return;
+		}
+
+		function onOISLoad() {
+			if (Boolean(sessionStorage.getItem("mediaObj"))) {
+				mediaObj = JSON.parse(sessionStorage.getItem("mediaObj"));
+				sessionStorage.removeItem("mediaObj");
+				mediaObj.urls.sort(function(a, b) {
+					return a.serial > b.serial ? 1 : -1;
+				});
+				showLoadBox();
+				videoLoad();
+				window.setInterval(function() {
+					$(".nowTime").text("当前时间：" + new Date().format("yyyy/MM/dd hh:mm:ss"));
+				}, 1e3);
+			}
+		}
+        var playRecordBoxObj = new BoxObject(".playRecordBox", 0, function() {
+            setPlayFocusPos = 0;
+            $(".confrimText").css("line-height", "71px");
+            var playInfo=PlayrecordUtil.check(mediaObj.id,mediaObj.urls[urlPos].url);
+            var playTimeRecord=0;
+            if(playInfo&&playInfo.playTime>0){
+                playTimeRecord = playInfo.playTime;
+            }else{
+                playTimeRecord = 0;
+            }
+            $(".confrimText").html("您上次播放到：" + ToolsUtil.formatTime(playTimeRecord) + "<br>是否继续播放？");
+            setPlayrecordFocus();
+        }, function() {
+            var playInfo=PlayrecordUtil.check(mediaObj.id,mediaObj.urls[urlPos].url)
+            if (setPlayFocusPos == 0){
+                if(playInfo&&playInfo.playTime>0){
+                    playTime = playInfo.playTime;
+                }else{
+                    playTime = 0;
+                }
+            }
+            else playTime = 0;
+            videoObj.currentTime=playTime;
+            videoObj.play();
+        });
+        function clickLogin(_focusPos){
+            var playInfo=PlayrecordUtil.check(mediaObj.id,mediaObj.urls[urlPos].url);
+            if (_focusPos == 0) {
+                if(playInfo&&playInfo.playTime>0){
+                    playTime = playInfo.playTime;
+                }else{
+                    playTime = 0;
+                }
+
+            }
+            else playTime = 0;
+            videoObj.currentTime=playTime;
+            videoObj.play();
+            playRecordBoxObj.hide();
+        }
+        function mouseOverLogin(_focusPos){
+            setPlayFocusPos = _focusPos;
+            setPlayrecordFocus(focusPos);
+        }
+        function setPlayrecordFocus() {
+            if (setPlayFocusPos == 0) {
+                $(".cancel-btn").css("visibility", "hidden");
+                $(".confrim-btn").css("visibility", "visible");
+            } else if (setPlayFocusPos == 1) {
+                $(".confrim-btn").css("visibility", "hidden");
+                $(".cancel-btn").css("visibility", "visible");
+            }
+        }
+		function videoLoad() {
+			if (videoObj.canPlayType) {
+				var mediaId = mediaObj.meta != 6 ? mediaObj.urls[urlPos].url.split("://")[1] : mediaObj.id;
+				if (Boolean(mediaId)) {
+					$("#video source").attr("src", ConfigUtil.getOisServer() + "/" + mediaId + ".m3u8?user=" + UserInfo.user + "&tid=" + UserInfo.terminalId + "&sid=" + mediaObj.id + "&type=stb&quality=" + quality + "&token=" + UserInfo.oisToken);
+					videoObj.load();
+                    var playInfo=PlayrecordUtil.check(mediaObj.id,mediaObj.urls[urlPos].url);
+                    if (playInfo&&playInfo.playTime>0){
+                        setPlayFocusPos = 0;
+                        playRecordBoxObj.show();
+                        $(".confrimText").css("line-height", "71px");
+                        $(".confrimText").html("您上次播放到：" + ToolsUtil.formatTime(playInfo.playTime) + "<br>是否继续播放？");
+
+                    }else{
+                        playRecordBoxObj.hide();
+                        videoObj.play();
+                    }
+
+				}
+			}
+		}
+        function checkUrlPos(){
+            var contentIndex=0;
+            var checkUrlPosInfo=PlayrecordUtil.check(mediaObj.id);
+            for (var index in mediaObj.urls) {
+                if (checkUrlPosInfo.url == mediaObj.urls[index].url) {
+                    contentIndex = index;
+                }
+            }
+            return contentIndex;
+        }
+		function showLoadBox() {
+			var content = "";
+            /*var checkUrlPosInfo=PlayrecordUtil.check(mediaObj.id);
+            for (var index in mediaObj.urls) {
+                if (checkUrlPosInfo.url == mediaObj.urls[index].url) {
+                    urlPos = index;
+                }
+            }*/
+			if (mediaObj.meta == 1 || mediaObj.meta == 6) {
+				content = mediaObj.title;
+			} else if (mediaObj.meta == 2) {
+				content = mediaObj.title + "(第 " + mediaObj.urls[urlPos].serial + " 集)";
+			} else {
+				content = mediaObj.title + "(" + mediaObj.urls[urlPos].title + ")";
+			}
+			$(".title").text("正在播放：" + content);
+			$(".loadText").text(content);
+			$(".loadBox").show();
+		}
+
+		function setSubscribeFocus() {
+			if (focusPos == 0) {
+				$(".cancel-btn").css("visibility", "hidden");
+				$(".confrim-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".confrim-btn").css("visibility", "hidden");
+				$(".cancel-btn").css("visibility", "visible");
+			}
+		}
+
+		function setQualityFocus() {
+			$(".quality div").each(function() {
+				$(this).css("visibility", "hidden");
+			});
+			$(".quality-btn" + focusPos).css("visibility", "visible");
+		}
+
+		function setSeekPointPos() {
+			$(".seekTime").text(ToolsUtil.formatTime(currentTime));
+			$(".processBar").width(Math.floor(currentTime / videoObj.duration * 850));
+			$(".seekPoint").css("left", 65 + Math.floor(currentTime / videoObj.duration * 850) + "px");
+		}
+		var showStatusImgTimeoutFlag = -1;
+
+		function changeStatus() {
+			if (videoObj.paused) play();
+			else pause();
+		}
+
+		function play() {
+			if (videoObj.paused) {
+				videoObj.play();
+				$(".statusImg").attr("src", "img/play_btn.png");
+				$(".statusBigImg").attr("src", "img/play.png");
+				$(".statusBigImg").show();
+				window.clearTimeout(showStatusImgTimeoutFlag);
+				showStatusImgTimeoutFlag = window.setTimeout(function() {
+					$(".statusBigImg").hide();
+				}, 3e3);
+				controlBoxObj.show();
+			}
+		}
+
+		function pause() {
+			if (!videoObj.paused) {
+				window.clearTimeout(showStatusImgTimeoutFlag);
+				videoObj.pause();
+				$(".statusImg").attr("src", "img/pause_btn.png");
+				$(".statusBigImg").attr("src", "img/pause.png");
+				$(".statusBigImg").show();
+				controlBoxObj.show();
+			}
+		}
+		var isSeek = false,
+			currentTime = 0;
+
+		function seek(value) {
+			isSeek = true;
+            var duration=videoObj.duration;
+            var timeOffset=15;
+
+			if (value > 0) {
+                if(duration>1200){
+                    currentTime += 15;
+                }else{
+                    currentTime += 30;
+                }
+				if (currentTime > duration) currentTime = duration;
+			} else {
+                if(duration>1200){
+                    currentTime -= 15;
+                }else{
+                    currentTime -= 30;
+                }
+				if (currentTime < 0) currentTime = 0;
+			}
+			setSeekPointPos();
+			controlBoxObj.refresh();
+		}
+
+		function savePlayRecord() {
+            if($('.playRecordBox')[0].style.display=="none"){
+                PlayrecordUtil.save({
+                    columnId: mediaObj.columnId,
+                    id: mediaObj.id,
+                    title: mediaObj.title,
+                    category: mediaObj.category,
+                    thumbnail: mediaObj.thumbnail,
+                    url: mediaObj.urls[urlPos].url,
+                    playTime: videoObj.currentTime
+                });
+            }else{
+                var playInfo=PlayrecordUtil.check(mediaObj.id,mediaObj.urls[urlPos].url);
+                var currentTime=0;
+                if(playInfo&&playInfo.playTime){
+                    currentTime=playInfo.playTime;
+                }
+                PlayrecordUtil.save({
+                    columnId: mediaObj.columnId,
+                    id: mediaObj.id,
+                    title: mediaObj.title,
+                    category: mediaObj.category,
+                    thumbnail: mediaObj.thumbnail,
+                    url: mediaObj.urls[urlPos].url,
+                    playTime:currentTime
+                });
+            }
+
+		}
+
+		function addVideoEventListener() {
+			videoObj.addEventListener("stalled", function() {
+				$(".loadBox").hide();
+//				DialogUtil.showToast("媒体资源获取异常");
+			}, true);
+			videoObj.addEventListener("canplaythrough", function() {
+				$(".loadBox").hide();
+				if (watchDuration != -1) {
+					window.setTimeout(function() {
+						subscribeBoxObj.show();
+					}, watchDuration * 1e3);
+				} else if (playTime > 0) videoObj.currentTime = playTime;
+			}, true);
+			videoObj.addEventListener("waiting", function() {
+				$(".loadBox").show();
+			}, true);
+			videoObj.addEventListener("seeking", function() {
+				$(".loadBox").show();
+			}, true);
+			videoObj.addEventListener("seeked", function() {
+				$(".loadBox").hide();
+			}, true);
+			videoObj.addEventListener("timeupdate", function() {
+				$(".currentTimeAndDuration").text(ToolsUtil.formatTime(videoObj.currentTime) + " / " + ToolsUtil.formatTime(videoObj.duration));
+			}, true);
+			videoObj.addEventListener("ended", function() {
+				if (mediaObj.meta == 1 || mediaObj.meta == 6 || urlPos == mediaObj.urls.length - 1) {
+					savePlayRecord();
+					window.history.go(-1);
+				} else if (urlPos < mediaObj.urls.length - 1) {
+					urlPos++;
+					showLoadBox();
+					videoLoad();
+				}
+			}, true);
+			videoObj.addEventListener("error", function() {
+				if (Boolean(videoObj.error)) {
+					switch (videoObj.error.code) {
+						case 1:
+//							DialogUtil.showToast("媒体资源获取异常");
+							break;
+						case 2:
+							DialogUtil.showToast("网络错误");
+							break;
+						case 3:
+							DialogUtil.showToast("媒体解码错误");
+							break;
+						case 4:
+							DialogUtil.showToast("视频格式不支持");
+							break;
+					}
+				}
+				switch (videoObj.networkState) {
+					case videoObj.NETWORK_EMPTY:
+						DialogUtil.showToast("尚未初始化");
+						break;
+					case videoObj.NETWORK_IDLE:
+						console.log("加载完成，网络空闲");
+						break;
+					case videoObj.NETWORK_LOADING:
+						console.log("视频加载中");
+						break;
+					case videoObj.NETWORK_NO_SOURCE:
+						//DialogUtil.showToast("加载失败");
+						break;
+				}
+			}, true);
+		}
+	</script>
+
+</html>

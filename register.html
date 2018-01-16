@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link rel="stylesheet" href="css/comm.css" />
+		<link rel="stylesheet" href="css/virtualkeyboard.css" />
+		<title>VIZIO</title>
+		<style>
+			.registInfo div {
+				float: none;
+				margin: 10px 0;
+			}
+		</style>
+	</head>
+
+	<body style="position: relative;">
+		<div style="width: 100%;">
+			<div style="width:100%;">
+				<div class="header">
+					<div class="step">
+						注册用户
+					</div>
+					<div style="font-size: 1.3em;">
+						<div>现在注册，</div>
+						<div style="color: #F0FD00;">2016/10/01前</div>可免费观看影视内容
+					</div>
+				</div>
+				<div class="logo"><img src="img/logo.png" /></div>
+			</div>
+		</div>
+		<div style="width: 100%;">
+			<div class="keyboardDiv" style="float: left;width: 50%;padding: 50px;padding-top: 30px;">
+				<div style="width: 100%;">
+					<div id="keyboardSpan" style="font-size: 1.3em;"></div>
+				</div>
+				<div class="virtualcontent">
+				</div>
+				<div class="lastDiv" style="width: 100%;">
+					<div style="width: 100%;">
+						<li class="backNext">
+							<div class="keyback" style="float: left;" onclick="clickBut()" onmouseover="mouseOverBut(0,true)">上一步</div>
+							<div class="keynext" style="float:right" onclick="clickBut()" onmouseover="mouseOverBut(1,true)">下一步</div>
+						</li>
+					</div>
+				</div>
+			</div>
+			<div class="registInfo">
+				<div>
+					<input id="username" class="characterskey" readonly="readonly" tabindex="-1" type="text" placeholder="用户名" />
+					<div id="userTip" style="color:red;left: 3px;float: right;height: 47px;line-height: 47px;display: none;margin: 10px 0;">用户名已被占用</div>
+				</div>
+				<!--<div>
+					<input id="email" class="characterskey" type="text" readonly="readonly" tabindex="-1" placeholder="注册邮箱" />
+					<div id="emailTip" style="color:red;left: 3px;float: right;height: 47px;line-height: 47px;display: none;margin: 10px 0;"></div>
+				</div>-->
+				<div>
+					<input id="mobile" class="numkey" type="text" readonly="readonly" tabindex="-1" placeholder="手机号" />
+					<div id="mobileTip" style="color:red;left: 3px;float: right;height: 47px;line-height: 47px;display: none;margin: 10px 0;"></div>
+                    <div id ="needTip" style="display:none;color:red;">（手机号码是找回密码的必须凭证，需谨慎填写）</div>
+                </div>
+				<div>
+					<input id="password" class="characterskey" type="password" readonly="readonly" tabindex="-1" placeholder="密码" />
+					<div id="passwordTip" style="color:red;left: 3px;float: right;height: 47px;line-height: 47px;display: none;margin: 10px 0;"></div>
+				</div>
+				<div>
+					<input id="confirmPw" class="characterskey" type="password" readonly="readonly" tabindex="-1" placeholder="确认密码" />
+					<div id="confirmPwTip" style="color:red;left: 3px;float: right;height: 47px;line-height: 47px;display: none;margin: 10px 0;"></div>
+				</div>
+			</div>
+		</div>
+		<div style="padding: 20px;position: absolute;right: 0;bottom: 0;">
+			<div>客户服务：channelchina@qcast.cn</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script src="js/comm.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.js"></script>
+	<script type="text/javascript" src="js/virtual-keyboard.js"></script>
+	<script type="text/javascript">
+		var focusPos = 0;
+		var inputPos = 0;
+		var userFlag = false;
+		var emailFlag = true;
+		var mobileFlag = false;
+		var passwordFlag = false;
+		var confirmPwFlag = false;
+		var flag = false;
+			
+		$(document).ready(function() {
+			if (Boolean(localStorage.getItem("UserInfo"))) {
+				UserInfo = JSON.parse(localStorage.getItem("UserInfo"));
+				localStorage.removeItem("UserInfo");
+				$("#username").val(UserInfo.user);
+				$("#email").val(UserInfo.email);
+				$("#mobile").val(UserInfo.mobile);
+			}
+			virtualkeyboard.init($(".virtualcontent"));
+			$(".registInfo").find("input").each(function(i) {
+				virtualkeyboard.createkeyboard($(this));
+				if (i == 0) {
+					$(this).addClass("onfocus");
+					virtualkeyboard.showkeyboard($(this));
+				} else {
+					$(this).addClass("onblur");
+				}
+			});
+		});
+
+		function eventHandle(keyObj) {
+			if (!virtualkeyboard.flag) {
+				focusBackNext($(".backNext"));
+				switch (keyObj.str) {
+					case "DPAD_LEFT":
+						if (focusPos != 0) {
+							focusPos = focusPos - 1;
+						}
+						focusBackNext($(".lastDiv .backNext"));
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_RIGHT":
+						if (focusPos < 1) {
+							focusPos = focusPos + 1;
+						}
+						focusBackNext($(".lastDiv .backNext"));
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_UP":
+						virtualkeyboard.flag = true;
+						focusPos = 0;
+						$(".lastDiv .backNext").children("div").css("border", "3px solid");
+						virtualkeyboard.backkeyboard();
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_DOWN":
+						return scrollFun(keyObj.event);
+						break;
+					case "DPAD_OK":
+						okBackNext($(".onfocus"));
+						break;
+					case "NAV_BACK":
+						var value = $(".onfocus").val();
+						if ($(".onfocus").attr("class").indexOf("monthkey") > -1 || $(".onfocus").attr("class").indexOf("yearkey") > -1) {
+							value = "";
+						} else {
+							value = value.substring(0, value.length - 1);
+						}
+						$(".onfocus").val(value);
+						return scrollFun(keyObj.event);
+						break;
+				}
+				if (keyboardInput(keyObj.value) != null) {
+					var value = $(".onfocus").val();
+					if ($(".onfocus").attr("class").indexOf("monthkey") > -1 || $(".onfocus").attr("class").indexOf("yearkey") > -1) {
+						return scrollFun(keyObj.event);
+					}
+					virtualkeyboard.inputStr = keyboardInput(keyObj.value);
+					value += virtualkeyboard.inputStr;
+					$(".onfocus").val(value);
+					return scrollFun(keyObj.event);
+				}
+			} else {
+				keyboardEvent(keyObj);
+			}
+		};
+
+		function onMessage(e) {
+			var data = e.data;
+			var result = data.result;
+			switch (data.event) {
+				case "comm_checkUser":
+					if (result.status == 200) {
+						userFlag = true;
+					}
+					if (result.status == 400) {
+						$("#userTip").css("display", "block");
+						$("#userTip").text("非法请求");
+						userFlag = false;
+					}
+					if (result.status == 401) {
+						$("#userTip").css("display", "block");
+						$("#userTip").text("用户ID已被占用");
+						userFlag = false;
+					}
+					if (result.status == 444) {
+						$("#userTip").css("display", "block");
+						$("#userTip").text("IP列入黑名单");
+						userFlag = false;
+					}
+					if (userFlag && emailFlag && mobileFlag && passwordFlag && confirmPwFlag) {
+						register();
+					}
+					break;
+				case "comm_checkEmail":
+					if (result.status == 200) {
+						emailFlag = true;
+					}
+					if (result.status == 400) {
+						$("#emailTip").css("display", "block");
+						$("#emailTip").text("非法请求");
+						emailFlag = false;
+					}
+					if (result.status == 401) {
+						$("#emailTip").css("display", "block");
+						$("#emailTip").text("邮箱已被占用");
+						emailFlag = false;
+					}
+					if (result.status == 444) {
+						$("#emailTip").css("display", "block");
+						$("#emailTip").text("IP列入黑名单");
+						emailFlag = false;
+					}
+					if (userFlag && emailFlag && mobileFlag && passwordFlag && confirmPwFlag) {
+						register();
+					}
+					break;
+				case "comm_checkMobile":
+					if (result.status == 200) {
+						mobileFlag = true;
+					}
+					if (result.status == 400) {
+						$("#mobileTip").css("display", "block");
+						$("#mobileTip").text("非法请求");
+						mobileFlag = false;
+					}
+					if (result.status == 401) {
+						$("#mobileTip").css("display", "block");
+						$("#mobileTip").text("手机号已被占用");
+						mobileFlag = false;
+					}
+					if (result.status == 444) {
+						$("#mobileTip").css("display", "block");
+						$("#mobileTip").text("IP列入黑名单");
+						mobileFlag = false;
+					}
+					if (userFlag && emailFlag && mobileFlag && passwordFlag && confirmPwFlag) {
+						register();
+					}
+					break;
+				case "comm_register":
+					if (result.status == 200) {
+
+						flag = true;
+//						UserInfo.autoLogin = true ;
+                        OISUtil.login();
+
+					}
+					if (result.status == 400) {
+						DialogUtil.showAlert("用户注册错误", "非法请求");
+						flag = false;
+						DialogUtil.hideLoading();
+					}
+					if (result.status == 404) {
+						DialogUtil.showAlert("用户注册错误", "字段不合法");
+						flag = false;
+						DialogUtil.hideLoading();
+					}
+					if (result.status == 444) {
+						DialogUtil.showAlert("用户注册错误", "IP列入黑名单");
+						flag = false;
+						DialogUtil.hideLoading();
+					}
+					break;
+				case "comm_userLogin":
+					if (result.status == 200) {
+						/*把服务器返回的OIS跟EPGS地址保存到当前会话*/
+						if (Boolean(result.oisServer)) ServerConfig.oisServer = result.oisServer;
+						if (Boolean(result.epgsServer) && result.epgsServer.length > 5) ServerConfig.epgsServer = result.epgsServer;
+						sessionStorage.setItem("ServerConfig", JSON.stringify(ServerConfig));
+						/*把服务器返回的OIS跟EPGS的token保存到本地*/
+						if (Boolean(result.oisToken)) UserInfo.oisToken = result.oisToken;
+						if (Boolean(result.epgsToken)) UserInfo.epgsToken = result.epgsToken;
+						UserInfo.loginTime = new Date().getTime();
+						ToolsUtil.saveCache("UserInfo", JSON.stringify(UserInfo));
+						/*响应体不为空时解析响应体*/
+						if (Boolean(result.data)) {
+							var root = XMLUtil.loadXML(result.data);
+							/*指派用户名和密码*/
+							if (root.getElementsByTagName("assignuser").length > 0) {
+								OISUtil.bindUser();
+							} else if (root.getElementsByTagName("marquee").length > 0) {
+								var marqueeNode = root.getElementsByTagName("marquee")[0];
+								if (UserInfo.terminalId == XMLUtil.getAttributeValue(marqueeNode, "peer_id")) {
+									var title = XMLUtil.getAttributeValue(marqueeNode, "title");
+									var content = XMLUtil.getAttributeValue(marqueeNode, "content");
+									var fontSize = XMLUtil.getAttributeValue(marqueeNode, "fontSize");
+									var fontColor = XMLUtil.getAttributeValue(marqueeNode, "fontColor");
+									var speed = XMLUtil.getAttributeValue(marqueeNode, "speed");
+									var loop = XMLUtil.getAttributeValue(marqueeNode, "loop");
+									var duration = parseInt(XMLUtil.getAttributeValue(marqueeNode, "duration"));
+									MessageUtil.save({
+										id: 0,
+										title: title,
+										content: content,
+										fontSize: fontSize,
+										fontColor: fontColor,
+										speed: speed,
+										loop: loop,
+										duration: duration,
+										finish: false
+									});
+									if (window.location.href.indexOf("message.html") > -1) {
+										window.postMessage({
+											event: "message"
+										}, "*");
+									}
+									MessageUtil.showNotFinishObj();
+								}
+							} else if (root.getElementsByTagName("alertmsg").length > 0) {
+								var alertmsgNode = root.getElementsByTagName("alertmsg")[0];
+								if (UserInfo.terminalId == XMLUtil.getAttributeValue(alertmsgNode, "peer_id")) {
+									var title = XMLUtil.getAttributeValue(alertmsgNode, "title");
+									var content = XMLUtil.getAttributeValue(alertmsgNode, "content");
+									MessageUtil.save({
+										id: 0,
+										title: title,
+										content: content,
+										fontSize: 24,
+										fontColor: "#FFFFFF",
+										speed: 5,
+										loop: -1,
+										duration: 0,
+										finish: true
+									});
+									if (window.location.href.indexOf("message.html") > -1) {
+										window.postMessage({
+											event: "message"
+										}, "*");
+									}
+									DialogUtil.showAlert(title, content);
+								}
+							} else if (root.getElementsByTagName("message").length > 0) {
+								var messageNode = root.getElementsByTagName("message")[0];
+								if (UserInfo.user == XMLUtil.getAttributeValue(messageNode, "user")) {
+									var title = XMLUtil.getAttributeValue(messageNode, "title");
+									var content = XMLUtil.getAttributeValue(messageNode, "content");
+									MessageUtil.save({
+										id: 0,
+										title: title,
+										content: content,
+										fontSize: 24,
+										fontColor: "#FFFFFF",
+										speed: 5,
+										loop: -1,
+										duration: 300,
+										finish: false
+									});
+									if (window.location.href.indexOf("message.html") > -1) {
+										window.postMessage({
+											event: "message"
+										}, "*");
+									}
+									MessageUtil.showNotFinishObj();
+								}
+							}
+						}
+						window.setTimeout(function(){
+							//window.location = "index.html";
+							window.history.go(-1);
+						},2000);
+					}else if(result.status == 405){
+						OISUtil.enable();
+					}
+					break;
+			}
+		}
+		
+		function clickBut(){
+			okBackNext($(".onfocus"));
+		}
+		
+		
+		function mouseOverBut(__focusPos,__flag){
+			focusPos = __focusPos;
+			virtualkeyboard.flag = false;
+			$(".virtualcontent").find("div").find("div").find("ul li div").css({
+				"border": "3px solid"
+			});
+			$(".lastDiv .backNext").find("div").each(function(i) {
+				if (focusPos == i) {
+					virtualkeyboard.setCss(this);
+				}
+			});
+			
+		}
+		
+		function checkInfo(__this) {
+			if (typeof __this == "object") {
+				if (__this.attr("id") == "username") {
+					var value = __this.val();
+					if (Boolean(value)) {
+						checkUser(value);
+					} else {
+                        inputPos=0;
+						errorFocus($("#username"));
+						DialogUtil.showAlert("用户注册错误", "用户名不能为空!");
+						userFlag = false;
+
+					}
+				}
+				/*if (__this.attr("id") == "email") {
+					var value = __this.val();
+					if (Boolean(value)) {
+						checkEmail(value);
+					} else {
+						errorFocus($("#email"));
+						DialogUtil.showAlert("用户注册错误", "邮箱不能为空!");
+						emailFlag = false;
+					}
+				}*/
+				if (__this.attr("id") == "mobile") {
+					var value = __this.val();
+					if (Boolean(value)) {
+						checkMobile(value);
+					} else {
+                        inputPos=1;
+						errorFocus($("#mobile"));
+						DialogUtil.showAlert("用户注册错误", "手机号不能为空!");
+						mobileFlag = false;
+
+                        $("#needTip")[0].display
+					}
+				}
+				if (__this.attr("id") == "password") {
+					var value = __this.val();
+					if (Boolean(value)) {
+						checkPassword(value);
+					} else {
+                        inputPos=2;
+						errorFocus($("#password"));
+						DialogUtil.showAlert("用户注册错误", "密码不能为空!");
+						passwordFlag = false;
+
+					}
+				}
+				if (__this.attr("id") == "confirmPw") {
+					var value = __this.val();
+					if (Boolean(value)) {
+						if ($("#password").val() == value) {
+							UserInfo.password = value;
+							confirmPwFlag = true;
+						} else {
+                            inputPos=3;
+							errorFocus($("#confirmPw"));
+							DialogUtil.showAlert("用户注册错误", "密码和确认密码须一致!");
+							confirmPwFlag = false;
+
+						}
+					} else {
+						if (passwordFlag) {
+                            inputPos=3;
+							errorFocus($("#confirmPw"));
+							DialogUtil.showAlert("用户注册错误", "确认密码不能为空!");
+
+						}
+					}
+				}
+			} else {
+				console.log("element is not object");
+			}
+		}
+
+		function checkEmail(str) {
+			var re = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/
+			if (re.test(str)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function focusBackNext(__this) {
+			__this.find("div").each(function(i) {
+				if (focusPos == i) {
+					virtualkeyboard.setCss(this);
+				}
+			});
+		}
+
+		function okBackNext(__this) {
+			if (typeof __this == "object") {
+				if (focusPos == 0) {
+					if (__this.parent().prev().find("input").length > 0) {
+						$(".registInfo").find("input").each(function() {
+							$(this).siblings().css("display", "none");
+						});
+						inputPos = inputPos - 1;
+                        if(inputPos==1){
+                            $("#needTip")[0].style.display="block";
+                        }else{
+                            $("#needTip")[0].style.display="none";
+                        }
+						__this.removeClass("onfocus");
+						__this.addClass("onblur");
+						__this.parent().prev().find("input").removeClass("onblur");
+						__this.parent().prev().find("input").addClass("onfocus");
+						virtualkeyboard.showkeyboard(__this.parent().prev().find("input"));
+						return;
+					} else {
+						UserInfo.user = $("#username").val();
+						UserInfo.email = $("#email").val();
+						UserInfo.mobile = $("#mobile").val();
+						sessionStorage.setItem("UserInfo", JSON.stringify(UserInfo));
+						window.history.go(-1);
+					}
+				} else {
+					if (__this.parent().next().find("input").length > 0) {
+						inputPos = inputPos + 1;
+                        if(inputPos==1){
+                            $("#needTip")[0].style.display="block";
+                        }else{
+                            $("#needTip")[0].style.display="none";
+                        }
+						__this.removeClass("onfocus");
+						__this.addClass("onblur");
+						__this.parent().next().find("input").removeClass("onblur");
+						__this.parent().next().find("input").addClass("onfocus");
+						virtualkeyboard.showkeyboard(__this.parent().next().find("input"));
+						return;
+					} else {
+						$($(".registInfo").find("input").toArray().reverse()).each(function(i) {
+							checkInfo($(this));
+						});
+					}
+				}
+			} else {
+				console.log("element is not object");
+			}
+		}
+
+		function checkEmail(mail) {
+			//邮箱的格式
+			var filter = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/
+			if (!filter.test(mail)) {
+				errorFocus($("#email"))
+				DialogUtil.showAlert("用户注册错误", "您的电子邮件格式不正确");
+				emailFlag = false;
+			} else {
+				UserInfo.email = mail;
+				OISUtil.checkEmail();
+			}
+		}
+		//手机格式验证
+		function checkMobile(mobil) {
+			//手机的格式十位数字
+			/*var reg = /^\d{10}$/;
+			//如果手机号码不能通过验证
+			if (!reg.test(mobil)) {
+				errorFocus($("#mobile"))
+				DialogUtil.showAlert("用户注册错误", "手机号格式有误必须是由数字组成且须10位");
+				mobileFlag = false;
+			} else {*/
+				UserInfo.mobile = mobil;
+				OISUtil.checkMobile();
+			//}
+		}
+		//验证用户账号是否正确
+		function checkUser(str) {
+			/*var re = /^[\w-]{8,16}$/;
+			if (!re.test(str)) {
+				errorFocus($("#username"))
+				DialogUtil.showAlert("用户注册错误", "用户名必须是由字母、数字、下划线和小短杠组成且须8-16位");
+				userFlag = false;
+			} else {*/
+				UserInfo.user = str;
+				OISUtil.checkUser();
+			//}
+		}
+		//验证密码是否正确
+		function checkPassword(__ele) {
+			var re = /^[\S]{6,}$/;
+			if (!re.test(__ele)) {
+				errorFocus($("#password"))
+				DialogUtil.showAlert("用户注册错误", "密码应不少于6位且不能含有空格!");
+				passwordFlag = false;
+			} else {
+				passwordFlag = true;
+			}
+		}
+		//注册
+		function register() {
+			if (flag) {
+				return;
+			} else {
+				UserInfo.enable = true ; 
+				UserInfo.expperiod = 90;
+				OISUtil.register();
+			}
+		}
+		
+		function errorFocus(__this){
+			$(".registInfo").find("input").removeClass("onfocus");
+			$(".registInfo").find("input").addClass("onblur");
+			__this.addClass("onfocus");
+			__this.removeClass("onblur");
+            if(inputPos==1){
+                $("#needTip")[0].style.display="block";
+            }else{
+                $("#needTip")[0].style.display="none";
+            }
+			virtualkeyboard.showkeyboard($(".onfocus"));
+		}
+		
+	</script>
+
+</html>

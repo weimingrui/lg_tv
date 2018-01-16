@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			.focus {
+				display: none
+			}
+			.mediaBox {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="focus" onclick="clickMedia(mediaPos)"></div>
+		<div class="columnTitleBox">
+			<div class="columnTitleColor"></div>
+			<div class="columnTitle">
+				播放记录
+				<span style="font-size: 30PX;">Playrecord</span>
+			</div>
+			<img class="clearBtn" onclick="clearMedia();" onmouseover="mouseOverMediaBtn();" src="img/clear_btn.png">
+		</div>
+		<div id="mediaScroll" style="width:1220px;height:600px;margin:20px 40px 0;overflow-y:auto;" onscroll="scrollMedia(this);">
+			<div class="mediaBox"></div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.min.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.min.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var onBtnFlag = false,
+			focusPos = mediaPos = 0,
+			mediaList = new Array();
+		var topValue = 0, // 上次滚动条到顶部的距离  
+			interval = null; // 定时器
+		var mediaScrollTop = 0;
+		var newMeidaPos = 0;
+
+		function eventHandle(keyObj) {
+//			if (mediaList.length == 0) return;
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (onBtnFlag) break;
+					if (mediaPos > 0) mediaPos--;
+					else break;
+					if (focusPos > 0) focusPos--;
+					else focusPos = 5;
+					setMediaFocus();
+					break;
+				case "DPAD_UP":
+					if (onBtnFlag) break;
+					else {
+						if (mediaPos > 5) mediaPos -= 6;
+						else {
+							setBtnFocus();
+							break;
+						}
+						if (focusPos > 5) focusPos -= 6;
+						setMediaFocus();
+						break;
+					}
+				case "DPAD_RIGHT":
+					if (onBtnFlag) break;
+					if (mediaPos < mediaList.length - 1) mediaPos++;
+					else break;
+					if (focusPos == 11) focusPos = 6;
+					else focusPos++;
+					setMediaFocus();
+					break;
+				case "DPAD_DOWN":
+					if (onBtnFlag && mediaList.length > 0) {
+						setMediaFocus();
+						break;
+					}
+					if (mediaPos < Math.floor((mediaList.length - 1) / 6) * 6) {
+						mediaPos += 6;
+						if (mediaPos > mediaList.length - 1) mediaPos = mediaList.length - 1;
+					} else break;
+					if (focusPos < 6 && focusPos % 6 == mediaPos % 6) {
+						focusPos += 6;
+						setMediaFocus();
+					} else focusPos = mediaPos % 6 + 6;
+					setMediaFocus();
+					break;
+				case "DPAD_OK":
+					if (onBtnFlag) {
+						PlayrecordUtil.clear();
+						$(".mediaBox").empty();
+						mediaList.length = 0;
+						DialogUtil.showToast("清除记录成功");
+					} else {
+						sessionStorage.setItem("playrecordInitObj", JSON.stringify({
+							focusPos: focusPos,
+							mediaPos: mediaPos
+						}));
+						window.location.href = "detail.html?cid=" + mediaList[mediaPos].columnId + "&mid=" + mediaList[mediaPos].id;
+					}
+					break;
+				case "NAV_BACK":
+					window.history.go(-1);
+					break;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			mediaList = PlayrecordUtil.getList();
+			if (mediaList.length > 0) {
+				DialogUtil.showLoading("加载中...");
+				if (Boolean(sessionStorage.getItem("playrecordInitObj"))) {
+					var initObj = JSON.parse(sessionStorage.getItem("playrecordInitObj"));
+					focusPos = initObj.focusPos;
+					mediaPos = initObj.mediaPos;
+					if (mediaPos > mediaList.length - 1) {
+						mediaPos = mediaList.length - 1;
+						if (mediaPos < 6) focusPos = mediaPos;
+						else focusPos = 6 + mediaPos % 6;
+					}
+					sessionStorage.removeItem("playrecordInitObj");
+				}
+				$.each(mediaList, function(i) {
+					$(".mediaBox").append(mediaHtml(i, this));
+				});
+				setMediaFocus(1);
+				DialogUtil.hideLoading();
+			}
+		});
+
+		function clickMedia(__mediaPos) {
+			onBtnFlag = false;
+			focusPos = __mediaPos;
+			mediaPos = __mediaPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 11) {
+				focusPos = (__mediaPos % 6 == 0) ? 6 : (__mediaPos % 6) + 6;
+			}
+			setMediaFocus();
+			sessionStorage.setItem("playrecordInitObj", JSON.stringify({
+				focusPos: focusPos,
+				mediaPos: mediaPos
+			}));
+			window.location.href = "detail.html?cid=" + mediaList[mediaPos].columnId + "&mid=" + mediaList[mediaPos].id;
+		}
+
+		function scrollMedia(__this) {
+			$(".focus").hide();
+			mediaScrollTop = $(__this).scrollTop();
+			newMeidaPos = Math.ceil(mediaScrollTop / 270);
+			console.log(newMeidaPos);
+			if (interval == null) {
+				interval = setInterval("test()", 1000);
+			}
+			topValue = mediaScrollTop;
+		}
+
+		function test() {
+			if ($("#mediaScroll").scrollTop() == topValue) {
+				$(".focus").show();
+				$("#mediaScroll").scrollTop(270 * newMeidaPos);
+				if (mediaPos >= 6 * newMeidaPos && mediaPos < 6 * (newMeidaPos + 2) && onBtnFlag == false) {
+					if ((mediaScrollTop) % 270 != 0) {
+						extraScrollTop = 270 - ((mediaScrollTop) % 270);
+					} else {
+						extraScrollTop = 0;
+					}
+					$(".focus").show();
+					$(".focus").css({
+						top: 124 + Math.floor(((6 * (newMeidaPos + 1)) > mediaPos) ? 0 : 1) * 270 + extraScrollTop,
+						left: 58 + focusPos % 6 * 200,
+						width: 160,
+						height: 230
+					});
+				} else {
+					$(".focus").hide();
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+		
+		function mouseOverMediaBtn(){
+			setBtnFocus();
+			$(".focus").removeAttr("onclick");
+			$(".focus").click(function (){
+				clearMedia();
+			});
+		}
+		
+		function mouseOverMedia(__mediaPos){
+			focusPos = __mediaPos;
+			mediaPos = __mediaPos;
+			if (mediaPos > mediaList.length - 1) return false;
+			if (focusPos > 11) {
+				focusPos = (__mediaPos % 6 == 0) ? 6 : (__mediaPos % 6) + 6;
+			}
+			setMediaFocus();	
+		}
+		
+		function clearMedia() {
+			clearMarquee();
+			if (mediaList.length != 0) {
+				onBtnFlag = true;
+				PlayrecordUtil.clear();
+				$(".mediaBox").empty();
+				setBtnFocus();
+				mediaList.length = 0;
+				DialogUtil.showToast("清除记录成功");
+			}
+		}
+
+		function clearMarquee() {
+			$(".vodTitle marquee").each(function() {
+				var $this = $(this);
+				$this.parent().html($this.html());
+			});
+		}
+
+		function addMarquee() {
+			var title = mediaList[mediaPos].title;
+			if (ToolsUtil.getStringLength(title) > 18) $($(".vodTitle")[mediaPos]).html('<marquee width="162" height="24" align="absmiddle" behavior="scroll">' + title + "</marquee>");
+		}
+
+		function mediaHtml(i, mediaObj) {
+			var html = '<div class="vod" onclick="clickMedia(' + i + ')" onmouseover="mouseOverMedia('+i+')"><div class="vodImg">';
+			html += '<img width="160" height="230" src="' + mediaObj.thumbnail + '"></div>';
+			html += '<div class="vodTitle">' + mediaObj.title + "</div></div>";
+			return html;
+		}
+
+		function setBtnFocus() {
+			onBtnFlag = true;
+			clearMarquee();
+			$(".focus").css({
+				top: 29,
+				left: 1086,
+				width: 129,
+				height: 53
+			});
+		}
+
+		function setMediaFocus(i) {
+			onBtnFlag = false;
+			clearMarquee();
+			if (i == undefined) {
+				if (mediaPos > focusPos) {
+					$("#mediaScroll").scrollTop(270 * (mediaPos - focusPos));
+				} else {
+					$("#mediaScroll").scrollTop(270 * (focusPos - mediaPos));
+				}
+			}
+			if (mediaPos > 11 || focusPos < 11) {
+				$("#mediaScroll").scrollTop(270 * Math.floor((mediaPos - focusPos) / 6));
+			}
+			if (i == undefined) {
+				mediaScrollTop = $("#mediaScroll").scrollTop();
+			}
+			if ((mediaScrollTop) % 270 != 0) {
+				extraScrollTop = 270 - ((mediaScrollTop) % 270);
+			} else {
+				extraScrollTop = 0;
+			}
+			$(".focus").show();
+			$(".focus").css({
+				top: 124 + Math.floor(focusPos / 6) * 270 + extraScrollTop,
+				left: 58 + focusPos % 6 * 200,
+				width: 160,
+				height: 230
+			});
+			addMarquee();
+		}
+	</script>
+
+</html>

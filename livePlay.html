@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>VIZIO</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="page-view-size" content="1280*720">
+		<link href="css/comm.css" rel="stylesheet">
+		<style type="text/css">
+			div {
+				position: absolute
+			}
+			.button {
+				position: relative;
+				float: left
+			}
+			.menuBox {
+				display: none;
+				top: 0;
+				left: 0;
+				height: 100%
+			}
+			.columnBox,
+			.mediaBox {
+				width: 100%;
+				height: 100%;
+			}
+			.column {
+				width: 100%;
+				text-align: center
+			}
+			.media {
+				width: 254px;
+				margin: 0 15px
+			}
+			.column,
+			.media {
+				position: relative;
+				height: 60px;
+				line-height: 60px;
+				font-size: 22px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			.loadBox {
+				display: none;
+				top: 240px;
+				left: 390px;
+				width: 500px;
+				height: 240px;
+				background-color: rgba(0, 0, 0, .8);
+				border-radius: 10px;
+			}
+			.loadText {
+				width: 100%;
+				margin-top: 30px;
+				color: #fff;
+				font-size: 36px;
+				text-align: center
+			}
+			.confrimBox,
+			.favoriteBox {
+				display: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2
+			}
+			.channelNumBox {
+				display: none;
+				top: 50px;
+				right: 50px;
+				font-size: 40px
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="mainBox" style="position:relative;width:100%;height:100%;background:#000000">
+			<video id="video" width="100%" height="100%">
+				<source type="application/vnd.apple.mpegurl"></source>
+			</video>
+			<div class="focus"></div>
+			<div class="menuBox">
+				<div style="position:relative;width:145px;height:100%;background:rgba(0,0,0,.7);">
+					<div style="width:100%;height:600px;margin:60px 0;overflow:hidden;">
+						<div class="columnBox"></div>
+					</div>
+				</div>
+				<img src="img/live_line.png" style="position:relative;float:left;width:2px;height:720px">
+				<div style="position:relative;width:304px;height:100%;background:rgba(0,0,0,.6);">
+					<div id="mediaScroll" style="z-index:4;width:100%;height:600px;margin:60px 0;overflow-y:auto;" onscroll="scrollMedia()">
+						<div class="mediaBox"></div>
+					</div>
+				</div>
+			</div>
+			<div class="loadBox">
+				<div style="top: 50px;left: 0;width: 100%;height: 77px;text-align: center;">
+					<img width="60" height="60" src="img/loading.gif">
+					<div class="loadText"></div>
+				</div>
+			</div>
+			<div class="confrimBox">
+				<div class="confrim" style="z-index:3">
+					<div class="confrimText"></div>
+					<div class="confrim-btn"></div>
+					<div class="cancel-btn"></div>
+				</div>
+			</div>
+			<div class="channelNumBox"></div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/json2.min.js"></script>
+	<script type="text/javascript" src="js/comm.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/keyevent.min.js"></script>
+	<script type="text/javascript">
+		var channelNumber = window.location.search.substring(1);
+		var columnList = [{
+				id: 0,
+				leaf: true,
+				pid: 2,
+				title: "全部频道",
+				type: "tv"
+			}],
+			columnMediaList = new Array(),
+			allMediaList = new Array(),
+			getMediaCount = 0;
+		var videoObj = $("#video").get(0),
+			currMediaObj = null,
+			menuPos = columnPos = mediaPos = currPos = focusPos = 0,
+			inputStr = 0,
+			playTimeoutFlag = -1;
+		var topValue = 0, // 上次滚动条到顶部的距离  
+			interval = null; // 定时器
+		var newMediaPos = 0;
+		var menuBoxObj = new BoxObject(".menuBox", 5e3, function() {
+			$(".focus").show(), menuPos = 1, columnPos = 0, mediaPos = currPos;
+			initMediaList();
+			$(".column").each(function(i) {
+				if (i == columnPos) $(this).css("color", "#F0FD00");
+				else $(this).css("color", "#FFFFFF");
+			});
+			$(".media").eq(mediaPos).css("color", "#F0FD00");
+			if (mediaPos > 9) {
+				focusPos = 9;
+				$(".mediaBox").css("top", -60 * (mediaPos - focusPos));
+			} else focusPos = mediaPos;
+			setMediaFocus();
+		}, function() {
+			$(".focus").hide();
+		});
+		var favoriteChannelAction = true;
+		var favoriteBoxObj = new BoxObject(".confrimBox", 0, function() {
+			window.clearTimeout(menuBoxObj.timeoutFlag);
+			$(".focus").hide(), focusPos = 0;
+			if (columnPos == columnList.length - 1 || FavoriteLiveUtil.check(columnMediaList[columnPos][mediaPos].id)) {
+				favoriteChannelAction = false;
+				$(".confrimText").text("确定取消收藏该频道？");
+			} else {
+				favoriteChannelAction = true;
+				$(".confrimText").text("确定收藏该频道？");
+			}
+			setConfirmBoxFocus();
+		}, function() {
+			if (focusPos == 0) {
+				if (favoriteChannelAction) {
+					FavoriteLiveUtil.save(columnMediaList[columnPos][mediaPos]);
+				} else {
+					FavoriteLiveUtil.remove(columnMediaList[columnPos][mediaPos].id);
+				}
+				columnMediaList[columnList.length - 1] = FavoriteLiveUtil.getList();
+			}
+			if (columnPos == columnList.length - 1) initMediaList();
+			if (columnPos == columnList.length - 1 && columnMediaList[columnList.length - 1].length == 0) {
+				menuPos = mediaPos = 0, focusPos = columnPos;
+				setColumnFocus();
+			} else {
+				var top = parseInt($(".mediaBox").position().top, 10);
+				if (mediaPos > columnMediaList[columnPos].length - 1) mediaPos = columnMediaList[columnPos].length - 1;
+				focusPos = mediaPos + Math.floor(top / 60);
+				setMediaFocus();
+			}
+			menuBoxObj.refresh();
+		});
+		var subscribeBoxObj = new BoxObject(".confrimBox", 0, function() {
+			if (menuBoxObj.showFlag) menuBoxObj.hide();
+			videoObj.pause(), $(".focus").hide(), focusPos = 0;
+			$(".confrimText").text("该频道为收费频道，是否订购？");
+			setConfirmBoxFocus();
+		}, function() {
+			if (focusPos == 0) window.location.href = "subscribe.html";
+			else window.history.go(-1);
+		});
+		var channelNumBoxObj = new BoxObject(".channelNumBox", 3e3, function() {
+			var channelNum = currMediaObj.channelNumber;
+			if (channelNum < 10) channelNum = "00" + channelNum;
+			else if (channelNum < 100) channelNum = "0" + channelNum;
+			$(".channelNumBox").text(channelNum);
+		});
+		var inputChannelNumBoxObj = new BoxObject(".channelNumBox", 2e3, function() {
+			if (menuBoxObj.showFlag) menuBoxObj.hide();
+			if (subscribeBoxObj.showFlag) subscribeBoxObj.hide();
+			window.clearTimeout(channelNumBoxObj.timeoutFlag);
+			var channelNum = inputStr;
+			if (channelNum < 10) channelNum = "00" + channelNum;
+			else if (channelNum < 100) channelNum = "0" + channelNum;
+			$(".channelNumBox").text(channelNum);
+		}, function() {
+			var channelNum = inputStr;
+			inputStr = 0;
+			if (channelNum != currMediaObj.channelNumber) {
+				for (var index in allMediaList) {
+					if (channelNum == allMediaList[index].channelNumber) {
+						currMediaObj = allMediaList[index];
+						currPos = parseInt(index, 10);
+						play();
+						return;
+					}
+				}
+				DialogUtil.showToast("频道号不存在");
+			}
+		});
+		addVideoEventListener();
+
+		function onMessage(e) {
+			OISUtil.onMessage(e);
+			EPGSUtil.onMessage(e);
+			var data = e.data;
+			switch (data.event) {
+				case "childColumn":
+					columnList = columnList.concat(data.result);
+					if (columnList.length > 0) {
+						$.each(columnList, function(index) {
+							columnMediaList.push(new Array());
+							if (index != 0 && index != columnList.length)
+								EPGSUtil.getMediaByColumnId(this.id, 0, 0, 200, "media");
+							$(".columnBox").append('<div class="column" onmouseover="mouseOverColumn(0,'+index+')">' + this.title + "</div>");
+						});
+					}
+					break;
+				case "media":
+					if (!Boolean(data.result.list)) break;
+					var columnId = data.mark.split("/")[0];
+					for (var index in columnList) {
+						if (columnId == columnList[index].id) {
+							allMediaList = allMediaList.concat(data.result.list);
+							columnMediaList[index] = data.result.list;
+							columnMediaList[index].sort(function(a, b) {
+								return a.channelNumber > b.channelNumber ? 1 : -1;
+							});
+							getMediaCount++;
+							break;
+						}
+					}
+					Array.prototype.push.apply(columnMediaList[0],columnMediaList[2]);
+					columnMediaList[0].sort(function(a,b){
+						return a.channelNumber-b.channelNumber;
+					});					
+					if(getMediaCount == columnList.length - 2){
+						allMediaList.sort(function(a, b) {
+							return a.channelNumber > b.channelNumber ? 1 : -1;
+						});
+						if (PlayrecordLiveUtil.getCCTVList().length == 0 && PlayrecordLiveUtil.getLocalChannelList().length == 0) {
+							for (var i = 0; i < allMediaList.length; i++) {
+								PlayrecordLiveUtil.save(allMediaList[i]);
+							}
+						} else PlayrecordLiveUtil.init(allMediaList);
+						FavoriteLiveUtil.init(allMediaList);
+						columnMediaList[0] = allMediaList;
+						columnMediaList[columnList.length - 1] = FavoriteLiveUtil.getList();
+						if (Boolean(channelNumber)) {
+							for (var index in allMediaList) {
+								if (channelNumber == allMediaList[index].channelNumber) {
+									currPos = parseInt(index, 10);
+									currMediaObj = allMediaList[index];
+									play();
+									return;
+								}
+							}
+						}
+						currPos = 0;
+						currMediaObj = allMediaList[0];
+						play();
+					}
+					break;
+				case "playAuthen":
+					if (currMediaObj.id = data.mark) {
+						window.clearTimeout(subscribeBoxObj.timeoutFlag);
+						if (data.result.watchDuration == 0) {
+							if (data.result.status == 400) {
+								DialogUtil.showAlert("鉴权错误", "非法请求，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 401) {
+								DialogUtil.showAlert("鉴权错误", "非法用户，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 402) {
+								DialogUtil.showAlert("鉴权错误", "用户被禁止，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 403) {
+								DialogUtil.showAlert("鉴权错误", "无效token，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 404) {
+								DialogUtil.showAlert("鉴权错误", "无效mediaId，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 405) {
+								DialogUtil.showAlert("鉴权错误", "service未包含media，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 409) {
+								DialogUtil.showAlert("鉴权错误", "无效终端，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							} else if (data.result.status == 410) {
+								DialogUtil.showAlert("鉴权错误", "终端已禁止，请联系客服<br/>邮箱：channelchina@qcast.cn");
+							}
+						} else if (data.result.watchDuration > 0) {
+							subscribeBoxObj.timeoutFlag = window.setTimeout(function() {
+								subscribeBoxObj.show();
+							}, data.result.watchDuration * 1e3);
+						}
+					}
+					break;
+			}
+		}
+
+		function eventHandle(keyObj) {
+			if (inputStr < 999 && keyObj.value > 47 && keyObj.value < 58) {
+				if (menuBoxObj.showFlag || subscribeBoxObj.showFlag) {
+					inputStr = 0;
+					return;
+				}
+				inputStr = parseInt(inputStr + keyboardInput(keyObj.value), 10);
+				inputChannelNumBoxObj.show();
+			} else if (inputChannelNumBoxObj.showFlag) return;
+			switch (keyObj.str) {
+				case "DPAD_LEFT":
+					if (favoriteBoxObj.showFlag || subscribeBoxObj.showFlag) {
+						if (focusPos > 0) {
+							focusPos--;
+							setConfirmBoxFocus();
+						}
+					} else if (!menuBoxObj.showFlag) {
+						menuBoxObj.show();
+					} else if (menuBoxObj.showFlag && menuPos == 1) {
+						menuPos = 0;
+						focusPos = columnPos;
+						setColumnFocus();
+					}
+					break;
+				case "CHANNEL_UP":
+				case "DPAD_UP":
+					if (menuBoxObj.showFlag) {
+						if (!favoriteBoxObj.showFlag) {
+							if (menuPos == 0) {
+								if (columnPos != 0) columnPos--;
+								else break;
+								if (focusPos != 0) focusPos--;
+								mediaPos = 0;
+								setColumnFocus();
+								initMediaList();
+							} else if (menuPos == 1) {
+								if (mediaPos != 0) mediaPos--;
+								else break;
+								if (focusPos != 0) focusPos--;
+								setMediaFocus();
+							}
+						}
+					} else {
+						if (subscribeBoxObj.showFlag) subscribeBoxObj.hide();
+						currPos = currPos == 0 ? allMediaList.length - 1 : currPos - 1;
+						currMediaObj = allMediaList[currPos];
+						play();
+					}
+					break;
+				case "DPAD_RIGHT":
+					if (favoriteBoxObj.showFlag || subscribeBoxObj.showFlag) {
+						if (focusPos < 1) {
+							focusPos++;
+							setConfirmBoxFocus();
+						}
+					} else if (menuBoxObj.showFlag && menuPos == 0 && columnMediaList[columnPos].length > 0) {
+						$(".column").each(function(i) {
+							if (i == columnPos) $(this).css("color", "#F0FD00");
+							else $(this).css("color", "#FFFFFF");
+						});
+						menuPos = 1;
+						var top = Math.abs($(".mediaBox").position().top);
+						focusPos = mediaPos - Math.floor(top / 60);
+						setMediaFocus();
+					}
+					break;
+				case "CHANNEL_DOWN":
+				case "DPAD_DOWN":
+					if (menuBoxObj.showFlag) {
+						if (!favoriteBoxObj.showFlag) {
+							if (menuPos == 0) {
+								if (columnPos < columnList.length - 1) columnPos++;
+								else break;
+								if (focusPos < 9 && focusPos < columnList.length - 1) focusPos++;
+								mediaPos = 0;
+								setColumnFocus();
+								initMediaList();
+							} else if (menuPos == 1) {
+								if (mediaPos < columnMediaList[columnPos].length - 1) mediaPos++;
+								else break;
+								if (focusPos < 9 && focusPos < columnMediaList[columnPos].length - 1) focusPos++;
+								setMediaFocus();
+							}
+						}
+					} else {
+						if (subscribeBoxObj.showFlag) subscribeBoxObj.hide();
+						currPos = currPos == allMediaList.length - 1 ? 0 : currPos + 1;
+						currMediaObj = allMediaList[currPos];
+						play();
+					}
+					break;
+				case "DPAD_OK":
+					if (favoriteBoxObj.showFlag) {
+						favoriteBoxObj.hide();
+					} else if (subscribeBoxObj.showFlag) {
+						subscribeBoxObj.hide();
+					} else if (!menuBoxObj.showFlag) {
+						menuBoxObj.show();
+					} else if (menuPos == 1) {
+						if (currMediaObj == columnMediaList[columnPos][mediaPos]) break;
+						menuBoxObj.hide();
+						currMediaObj = columnMediaList[columnPos][mediaPos];
+						for (var index in allMediaList) {
+							if (currMediaObj.id == allMediaList[index].id) {
+								currPos = parseInt(index, 10);
+								break;
+							}
+						}
+						play();
+					}
+					break;
+				case "NAV_INFO":
+					if (menuBoxObj.showFlag && menuPos == 1) {
+						favoriteBoxObj.show();
+					}
+					break;
+				default:
+					if (menuBoxObj.showFlag) {
+						menuBoxObj.hide();
+						break;
+					}
+					return;
+			}
+			return scrollFun(keyObj.event);
+		}
+		$(function() {
+			EPGSUtil.getChildColumn(2, "childColumn");
+		});
+
+		function clickChannel(__mediaPos) {
+			menuPos = 1;
+			mediaPos = __mediaPos;
+			if (favoriteBoxObj.showFlag) {
+				favoriteBoxObj.hide();
+			} else if (subscribeBoxObj.showFlag) {
+				subscribeBoxObj.hide();
+			} else if (!menuBoxObj.showFlag) {
+				menuBoxObj.show();
+			} else if (menuPos == 1) {
+				if (currMediaObj == columnMediaList[columnPos][mediaPos]) return;
+				menuBoxObj.hide();
+				currMediaObj = columnMediaList[columnPos][mediaPos];
+				for (var index in allMediaList) {
+					if (currMediaObj.id == allMediaList[index].id) {
+						currPos = parseInt(index, 10);
+						break;
+					}
+				}
+				play();
+			}
+		}
+		
+		function mouseOverColumn(__mediaPos,__columnPos){
+			mediaPos = __mediaPos;
+			columnPos = __columnPos;
+			focusPos = __columnPos;
+			$(".focus").show();
+			$(".focus").css({
+				top: 62 + focusPos * 60,
+				left: 10,
+				width: 119,
+				height: 50
+			});
+			$(".columnBox").css({
+				top: -60 * (columnPos - focusPos)
+			});
+			initMediaList();
+		}
+		
+		function mouseOverMedia(__mediaPos){
+			menuPos = 1;
+			mediaPos= __mediaPos +1;
+			setMediaFocus();
+		}
+
+		function scrollMedia() {
+			if (menuPos == 1) {
+				$(".focus").hide();
+				menuBoxObj.refresh();
+			}
+			mediaScrollTop = $("#mediaScroll").scrollTop();
+			newMediaPos = Math.ceil(mediaScrollTop / 60);
+			if (interval == null) {
+				interval = setInterval("test()", 1000);
+			}
+			topValue = mediaScrollTop;
+		}
+
+		function test() {
+			if ($("#mediaScroll").scrollTop() == topValue) {
+				$("#mediaScroll").scrollTop(60 * newMediaPos);
+				if (mediaPos - newMediaPos >= 0 && mediaPos - newMediaPos <= 9 && menuPos == 1) {
+					$(".focus").show();
+					$(".focus").css({
+						top: 62 + (mediaPos - newMediaPos) * 60,
+						left: 157,
+						width: 258,
+						height: 50
+					});
+				} else if (menuPos == 2) {
+					$(".focus").hide();
+				}
+				window.clearInterval(interval);
+				interval = null;
+			}
+		}
+
+		function onEPGSLoad() {}
+
+		function play() {
+			window.clearTimeout(subscribeBoxObj.timeoutFlag);
+			if ($(".loadBox").css("display") == "none") {
+				$(".loadBox").show();
+			}
+			$(".loadText").html(currMediaObj.channelNumber + "&nbsp;&nbsp;" + currMediaObj.title), channelNumBoxObj.show();
+			window.clearTimeout(playTimeoutFlag);
+			playTimeoutFlag = window.setTimeout(function() {
+				videoLoad();
+			}, 1e3);
+		}
+
+		function videoLoad() {
+			videoObj.pause();
+			if (videoObj.canPlayType) {
+				var url = "";
+				if (currMediaObj.meta == 5) {
+					url = ConfigUtil.getOisServer() + "/" + currMediaObj.id + ".m3u8?user=" + UserInfo.user + "&tid=" + UserInfo.terminalId + "&sid=" + currMediaObj.id + "&type=stb&quality=2&token=" + UserInfo.oisToken;
+				} else if (currMediaObj.urls[0].url.substring(0, 3) == "mop") {
+					var tempMediaId = currMediaObj.urls[0].url.split("://")[1];
+					url = ConfigUtil.getOisServer() + "/" + tempMediaId + ".m3u8?user=" + UserInfo.user + "&tid=" + UserInfo.terminalId + "&sid=" + currMediaObj.id + "&type=stb&quality=2&token=" + UserInfo.oisToken;
+				} else {
+					url = currMediaObj.urls[0].url;
+				}
+				if (Boolean(url)) {
+					$("#video source").attr("src", url);
+					videoObj.load();
+					videoObj.play();
+					if (currMediaObj.price > 0) OISUtil.playAuthen(currMediaObj.id, "playAuthen");
+				}
+			}
+		}
+
+		function initMediaList() {
+			$(".mediaBox").empty();
+			$("#mediaScroll").scrollTop(0);
+			$(".mediaBox").css("top", 0);
+			$.each(columnMediaList[columnPos], function(i) {
+				var channelNum = this.channelNumber;
+				if (this.channelNumber < 10) {
+					channelNum = "00" + channelNum;
+				} else if (this.channelNumber < 100) {
+					channelNum = "0" + channelNum;
+				}
+				$(".mediaBox").append('<div class="media" onclick="clickChannel(' + i + ');" onmouseover="mouseOverMedia('+i+');">' + channelNum + " " + this.title + "</div>");
+			});
+		}
+
+		function setColumnFocus() {
+			$(".focus").show();
+			$(".focus").css({
+				top: 62 + focusPos * 60,
+				left: 10,
+				width: 119,
+				height: 50
+			});
+			$(".columnBox").css({
+				top: -60 * (columnPos - focusPos)
+			});
+			menuBoxObj.refresh();
+		}
+
+		function setMediaFocus(i) {
+			if (i == undefined) {
+				if (mediaPos > focusPos) {
+					$("#mediaScroll").scrollTop(60 * (mediaPos - focusPos));
+				} else {
+					$("#mediaScroll").scrollTop(60 * (focusPos - mediaPos));
+				}
+			}
+			$(".focus").show();
+			$(".focus").css({
+				top: 62 + (mediaPos - newMediaPos) * 60,
+				left: 157,
+				width: 258,
+				height: 50
+			});
+			/*$(".mediaBox").css({
+				top: -60 * (mediaPos - focusPos)
+			});*/
+			menuBoxObj.refresh();
+		}
+
+		function setConfirmBoxFocus() {
+			if (focusPos == 0) {
+				$(".cancel-btn").css("visibility", "hidden");
+				$(".confrim-btn").css("visibility", "visible");
+			} else if (focusPos == 1) {
+				$(".confrim-btn").css("visibility", "hidden");
+				$(".cancel-btn").css("visibility", "visible");
+			}
+		}
+
+		function addVideoEventListener() {
+			videoObj.addEventListener("stalled", function() {
+//				DialogUtil.showToast("媒体资源获取异常");
+			}, true);
+			videoObj.addEventListener("loadeddata", function() {
+				$(".loadBox").hide();
+			}, true);
+			videoObj.addEventListener("canplaythrough", function() {
+				$(".loadBox").hide();
+			}, true);
+			videoObj.addEventListener("waiting", function() {
+				if ($(".loadBox").css("display") == "none") {
+					$(".loadBox").show();
+				}
+			}, true);
+			videoObj.addEventListener("error", function() {
+				if (Boolean(videoObj.error)) {
+					switch (videoObj.error.code) {
+						case 1:
+//							DialogUtil.showToast("媒体资源获取异常");
+							break;
+						case 2:
+							DialogUtil.showToast("网络错误");
+							break;
+						case 3:
+							DialogUtil.showToast("媒体解码错误");
+							break;
+						case 4:
+							DialogUtil.showToast("视频格式不支持");
+							break;
+					}
+				}
+				switch (videoObj.networkState) {
+					case videoObj.NETWORK_EMPTY:
+						DialogUtil.showToast("尚未初始化");
+						break;
+					case videoObj.NETWORK_IDLE:
+						console.log("加载完成，网络空闲");
+						break;
+					case videoObj.NETWORK_LOADING:
+						DialogUtil.showToast("视频加载中");
+						break;
+					case videoObj.NETWORK_NO_SOURCE:
+//						DialogUtil.showToast("加载失败");
+						break;
+				}
+			}, true);
+		}
+	</script>
+
+</html>
